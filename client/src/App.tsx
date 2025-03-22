@@ -50,10 +50,12 @@ function Router() {
           {currentState === "input" ? (
             <InputState onVideoSubmit={handleVideoSubmit} />
           ) : (
-            <ResultsState 
-              videoData={videoData}
-              onReturn={returnToInput}
-            />
+            <div className="flex flex-col h-screen overflow-hidden">
+              <ResultsState 
+                videoData={videoData}
+                onReturn={returnToInput}
+              />
+            </div>
           )}
         </div>
       </Route>

@@ -89,28 +89,21 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
   };
 
   return (
-    <>
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <svg className="h-6 w-6 text-youtube" viewBox="0 0 24 24" fill="currentColor">
+    <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark overflow-hidden">
+      <div className="flex justify-end p-2">
+        <ThemeToggle />
+      </div>
+      
+      <div className="flex-grow flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <svg className="h-8 w-8 text-youtube" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
             </svg>
-            <h1 className="text-xl font-bold">Pinyin Karaoke</h1>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      <main className="flex-grow container mx-auto px-4 py-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2">YouTube Pinyin Karaoke Generator</h2>
-            <p className="text-text-muted dark:text-gray-400">Generate pinyin lyrics for Chinese songs from YouTube</p>
+            <h1 className="text-2xl font-bold">Pinyin Karaoke</h1>
           </div>
 
-          <Card className="mb-6">
+          <Card>
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit}>
                 {/* YouTube URL Input */}
@@ -146,9 +139,6 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
                       </div>
                     )}
                   </div>
-                  <p className="mt-1 text-xs text-text-muted dark:text-gray-400">
-                    Paste a YouTube URL of a Chinese song
-                  </p>
                 </div>
 
                 {/* Song Title Input (conditionally shown) */}
@@ -164,9 +154,6 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
                       onChange={(e) => setSongTitle(e.target.value)}
                       placeholder="Edit if needed for better search results"
                     />
-                    <p className="mt-1 text-xs text-text-muted dark:text-gray-400">
-                      Edit if needed for more accurate search results
-                    </p>
                   </div>
                 )}
 
@@ -209,57 +196,12 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
 
           {/* Error Message */}
           {error && (
-            <Alert variant="destructive" className="mb-6">
+            <Alert variant="destructive" className="mt-4">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          {/* Sample URLs */}
-          <div className="mt-8 bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-2">Try these examples:</h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs bg-white dark:bg-gray-800"
-                onClick={() => useSampleUrl('https://www.youtube.com/watch?v=cYCYlaKQFMM')}
-              >
-                周杰倫 - 青花瓷
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs bg-white dark:bg-gray-800"
-                onClick={() => useSampleUrl('https://www.youtube.com/watch?v=bu7nU9Mhpyo')}
-              >
-                鄧紫棋 - 泡沫
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs bg-white dark:bg-gray-800"
-                onClick={() => useSampleUrl('https://www.youtube.com/watch?v=qX2GsMj7154')}
-              >
-                五月天 - 倔強
-              </Button>
-            </div>
-          </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-auto border-t border-gray-200 dark:border-gray-800 py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-text-muted dark:text-gray-400">
-            <p>YouTube Pinyin Karaoke Generator</p>
-            <div className="flex gap-6 mt-2 md:mt-0">
-              <a href="#" className="hover:text-text-light dark:hover:text-text-dark transition-colors">Help</a>
-              <a href="#" className="hover:text-text-light dark:hover:text-text-dark transition-colors">About</a>
-              <a href="#" className="hover:text-text-light dark:hover:text-text-dark transition-colors">GitHub</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </>
+      </div>
+    </div>
   );
 }

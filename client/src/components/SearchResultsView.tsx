@@ -39,97 +39,97 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {Array(3).fill(0).map((_, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <Skeleton className="w-16 h-16 rounded" />
-                <div className="flex-1">
-                  <Skeleton className="h-5 w-3/4 rounded mb-2" />
-                  <Skeleton className="h-4 w-1/2 rounded" />
-                </div>
+      <div className="h-full flex items-center justify-center p-4">
+        <div className="space-y-4 w-full">
+          {Array(5).fill(0).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 animate-pulse">
+              <Skeleton className="w-12 h-12 rounded flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-3/4 rounded mb-2" />
+                <Skeleton className="h-3 w-1/2 rounded" />
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          Error loading search results: {(error as Error).message}
-        </AlertDescription>
-      </Alert>
+      <div className="h-full flex items-center justify-center p-4">
+        <Alert variant="destructive" className="w-full">
+          <AlertDescription>
+            Error loading search results: {(error as Error).message}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <Alert>
-        <AlertDescription className="flex items-start">
-          <svg className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 className="text-sm font-medium">No lyrics found</h3>
-            <p className="mt-1 text-sm">
-              Try modifying the search query or try another video
-            </p>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <div className="h-full flex items-center justify-center p-4">
+        <Alert className="w-full">
+          <AlertDescription className="flex items-start">
+            <svg className="h-5 w-5 mr-2 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium">No lyrics found</h3>
+              <p className="mt-1 text-sm">
+                Try modifying the search query or try another video
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="text-text-muted dark:text-gray-400 text-sm mb-2">
-          Showing results for: <span className="font-medium">{searchQuery}</span>
-        </p>
-        
-        <div className="space-y-3">
-          {data.map((result) => (
-            <div 
-              key={result.id}
-              className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg p-3 cursor-pointer transition-colors"
-              onClick={() => onSelectSong(result)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center overflow-hidden text-gray-400">
-                  {result.instrumental ? (
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                  ) : (
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-lg">{result.trackName}</h3>
-                  <p className="text-text-muted dark:text-gray-400">{result.artistName}</p>
-                  {result.albumName && (
-                    <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
-                      Album: {result.albumName} {result.duration ? `• ${Math.floor(result.duration / 60)}:${(result.duration % 60).toString().padStart(2, '0')}` : ''}
-                    </p>
-                  )}
-                </div>
-                <div className="text-primary dark:text-primary">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    <div className="h-full overflow-y-auto p-3">
+      <p className="text-text-muted dark:text-gray-400 text-xs mb-3">
+        Showing results for: <span className="font-medium">{searchQuery}</span>
+      </p>
+      
+      <div className="space-y-3">
+        {data.map((result) => (
+          <div 
+            key={result.id}
+            className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg p-3 cursor-pointer transition-colors"
+            onClick={() => onSelectSong(result)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center overflow-hidden text-gray-400 flex-shrink-0">
+                {result.instrumental ? (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                   </svg>
-                </div>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-base truncate">{result.trackName}</h3>
+                <p className="text-text-muted dark:text-gray-400 text-sm truncate">{result.artistName}</p>
+                {result.albumName && (
+                  <p className="text-xs text-text-muted dark:text-gray-500 truncate">
+                    Album: {result.albumName} {result.duration ? `• ${Math.floor(result.duration / 60)}:${(result.duration % 60).toString().padStart(2, '0')}` : ''}
+                  </p>
+                )}
+              </div>
+              <div className="text-primary dark:text-primary flex-shrink-0">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -138,187 +138,172 @@ export default function LyricsView({ selectedSong, currentTime = 0 }: LyricsView
 
   if (!selectedSong) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <Alert>
-            <AlertDescription>
-              Please select a song from the search results to view lyrics.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div className="h-full flex items-center justify-center p-4">
+        <Alert>
+          <AlertDescription>
+            Please select a song from the search results to view lyrics.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Skeleton className="w-12 h-12 rounded" />
-            <div className="flex-1">
-              <Skeleton className="h-6 w-3/4 rounded mb-2" />
-              <Skeleton className="h-4 w-1/2 rounded" />
+      <div className="h-full flex flex-col overflow-hidden p-4">
+        <div className="flex items-center gap-3 mb-4">
+          <Skeleton className="w-10 h-10 rounded" />
+          <div className="flex-1">
+            <Skeleton className="h-4 w-3/4 rounded mb-2" />
+            <Skeleton className="h-3 w-1/2 rounded" />
+          </div>
+        </div>
+        <div className="space-y-6 flex-grow">
+          {Array(10).fill(0).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <Skeleton className="h-3 w-5/6 rounded mb-2" />
+              <Skeleton className="h-5 w-4/6 rounded" />
             </div>
-          </div>
-          <div className="space-y-6">
-            {Array(5).fill(0).map((_, i) => (
-              <div key={i}>
-                <Skeleton className="h-3 w-5/6 rounded mb-2" />
-                <Skeleton className="h-5 w-4/6 rounded" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription className="flex items-start">
-          <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h3 className="text-sm font-medium">Could not load lyrics</h3>
-            <p className="mt-1 text-sm">
-              Unable to retrieve or process lyrics for this song
-            </p>
-            <button 
-              className="mt-3 text-sm font-medium bg-red-200 dark:bg-red-800 hover:bg-red-300 dark:hover:bg-red-700 px-3 py-1 rounded-md"
-              onClick={() => window.location.reload()}
-            >
-              Try again
-            </button>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <div className="h-full flex items-center justify-center p-4">
+        <Alert variant="destructive" className="w-full">
+          <AlertDescription className="flex items-start">
+            <svg className="h-5 w-5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium">Could not load lyrics</h3>
+              <p className="mt-1 text-sm">
+                Unable to retrieve or process lyrics for this song
+              </p>
+              <button 
+                className="mt-3 text-sm font-medium bg-red-200 dark:bg-red-800 hover:bg-red-300 dark:hover:bg-red-700 px-3 py-1 rounded-md"
+                onClick={() => window.location.reload()}
+              >
+                Try again
+              </button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (!data || (!data.plainLyrics && !data.syncedLyrics && !data.instrumental)) {
     return (
-      <Alert>
-        <AlertDescription className="flex items-start">
-          <svg className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <div>
-            <h3 className="text-sm font-medium">No lyrics found</h3>
-            <p className="mt-1 text-sm">
-              No lyrics could be found for this song
-            </p>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <div className="h-full flex items-center justify-center p-4">
+        <Alert className="w-full">
+          <AlertDescription className="flex items-start">
+            <svg className="h-5 w-5 mr-2 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium">No lyrics found</h3>
+              <p className="mt-1 text-sm">
+                No lyrics could be found for this song
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   // Handle instrumental tracks
   if (data.instrumental) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
-              <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="font-medium text-lg">{data.trackName}</h3>
-              <p className="text-text-muted dark:text-gray-400">{data.artistName}</p>
-            </div>
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="flex items-center gap-3 p-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+          <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+            <svg className="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
           </div>
-          
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
-            <h4 className="text-lg font-medium mb-2">Instrumental Track</h4>
-            <p className="text-text-muted dark:text-gray-400">
+          <div className="overflow-hidden">
+            <h3 className="font-medium text-sm truncate">{data.trackName}</h3>
+            <p className="text-text-muted dark:text-gray-400 text-xs truncate">{data.artistName}</p>
+          </div>
+        </div>
+        
+        <div className="flex-grow flex items-center justify-center p-4">
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center w-full">
+            <h4 className="text-base font-medium mb-2">Instrumental Track</h4>
+            <p className="text-text-muted dark:text-gray-400 text-sm">
               This is an instrumental track with no lyrics.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   const hasSyncedLyrics = data.syncedLyrics && data.syncedLyrics.trim() !== '';
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-medium text-lg">{data.trackName}</h3>
-            <p className="text-text-muted dark:text-gray-400">{data.artistName}</p>
+    <div className="h-full overflow-hidden flex flex-col">
+      <div className="flex items-center gap-3 p-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
+        <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+          <svg className="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+        <div className="overflow-hidden">
+          <h3 className="font-medium text-sm truncate">{data.trackName}</h3>
+          <p className="text-text-muted dark:text-gray-400 text-xs truncate">{data.artistName}</p>
+          {hasSyncedLyrics && (
+            <span className="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Synchronized
+            </span>
+          )}
+        </div>
+      </div>
+      
+      <div 
+        className="lyrics-container font-chinese flex-grow overflow-y-auto p-3 scroll-smooth" 
+        ref={lyricsContainerRef}
+      >
+        {syncedLyrics.map((line, index) => (
+          <div 
+            key={index} 
+            className={`mb-4 p-2 rounded transition-colors duration-300 ${
+              index === currentLineIndex 
+                ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 pl-3' 
+                : ''
+            }`}
+            data-line-index={index}
+          >
+            {line.pinyin && (
+              <div className={`text-[0.85rem] ${
+                index === currentLineIndex 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-[#0070f3] dark:text-[#4da3ff]'
+              } mb-[-0.25rem]`}>
+                {line.pinyin}
+              </div>
+            )}
+            <div className={`text-[1.15rem] leading-[2.5rem] ${
+              index === currentLineIndex ? 'font-bold' : ''
+            }`}>
+              {line.chinese}
+            </div>
             {hasSyncedLyrics && (
-              <span className="inline-flex items-center px-2 py-1 mt-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Synchronized
-              </span>
+              <div className="text-xs text-text-muted">
+                {Math.floor(line.startTime / 60)}:{(line.startTime % 60).toFixed(2).padStart(5, '0')}
+              </div>
             )}
           </div>
-        </div>
-        
-        <div 
-          className="lyrics-container font-chinese mb-6 max-h-[400px] overflow-y-auto pr-2 scroll-smooth" 
-          ref={lyricsContainerRef}
-        >
-          {syncedLyrics.map((line, index) => (
-            <div 
-              key={index} 
-              className={`mb-4 p-2 rounded transition-colors duration-300 ${
-                index === currentLineIndex 
-                  ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 pl-3' 
-                  : ''
-              }`}
-              data-line-index={index}
-            >
-              {line.pinyin && (
-                <div className={`text-[0.85rem] ${
-                  index === currentLineIndex 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-[#0070f3] dark:text-[#4da3ff]'
-                } mb-[-0.25rem]`}>
-                  {line.pinyin}
-                </div>
-              )}
-              <div className={`text-[1.15rem] leading-[2.5rem] ${
-                index === currentLineIndex ? 'font-bold' : ''
-              }`}>
-                {line.chinese}
-              </div>
-              {hasSyncedLyrics && (
-                <div className="text-xs text-text-muted">
-                  {Math.floor(line.startTime / 60)}:{(line.startTime % 60).toFixed(2).padStart(5, '0')}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-          <h4 className="text-sm font-medium mb-2 flex items-center">
-            <svg className="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            About Pinyin
-          </h4>
-          <p className="text-sm text-text-muted dark:text-gray-400">
-            Pinyin is the standard system to transcribe Mandarin Chinese pronunciation into the Latin alphabet. 
-            The blue text above each line shows how to pronounce the Chinese characters.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </div>
   );
 }
