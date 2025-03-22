@@ -19,7 +19,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   const [activeTab, setActiveTab] = useState("search");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  
+
   // Reference to the seekTo function from the YouTube player
   const seekToRef = useRef<((time: number) => void) | null>(null);
 
@@ -35,7 +35,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     // Update our current time state as well
     setCurrentTime(time);
   };
-  
+
   // Handle song selection
   const handleSongSelect = (song: SongResult) => {
     setSelectedSong(song);
@@ -45,47 +45,32 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Streamlined navigation bar */}
-      <div className="w-full bg-white dark:bg-gray-900 py-1 px-3 flex items-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
-        <div className="flex items-center space-x-2 text-sm">
-          <Button
-            variant="ghost"
-            size="sm"
+      <div className="w-full bg-white dark:bg-gray-900 py-2 px-4 flex items-center justify-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-center space-x-4 text-sm">
+          <a 
+            href="#" 
             onClick={onReturn}
-            className="px-2 py-0 h-8"
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "search" ? 'text-blue-500' : 'text-gray-500'}`}
           >
             Back
-          </Button>
-          
-          <span className="text-gray-400 mx-1 flex items-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </span>
-          
-          <Button
-            variant={activeTab === "search" ? "secondary" : "ghost"}
-            size="sm"
+          </a>
+
+          <a 
+            href="#" 
             onClick={() => setActiveTab("search")}
-            className="px-2 py-0 h-8"
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "search" ? 'text-blue-500' : 'text-gray-500'}`}
           >
             Search
-          </Button>
-          
-          <span className="text-gray-400 mx-1 flex items-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </span>
-          
-          <Button
-            variant={activeTab === "lyrics" ? "secondary" : "ghost"}
-            size="sm"
+          </a>
+
+          <a 
+            href="#" 
             onClick={() => setActiveTab("lyrics")}
-            className="px-2 py-0 h-8"
-            disabled={!selectedSong}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "lyrics" ? 'text-blue-500' : 'text-gray-500'}`}
+            style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
           >
             Player
-          </Button>
+          </a>
         </div>
       </div>
 
