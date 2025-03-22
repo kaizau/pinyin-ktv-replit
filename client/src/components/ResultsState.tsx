@@ -134,13 +134,27 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
         autoplay: 1,
         modestbranding: 1,
         playsinline: 1,
-        rel: 0
+        rel: 0,
+        fs: 0, // Disable fullscreen button
+        controls: 1
       },
       events: {
         onReady: () => {
           console.log('YouTube player ready');
           // Start tracking time when player is ready
           startTimeTracking();
+          
+          // Ensure iframe is properly styled
+          const iframe = document.querySelector('#youtube-player') as HTMLIFrameElement;
+          if (iframe) {
+            iframe.style.position = 'absolute';
+            iframe.style.top = '0';
+            iframe.style.left = '0';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.maxWidth = '100%';
+            iframe.style.maxHeight = '100%';
+          }
         },
         onStateChange: (event: any) => {
           // State 1 is playing
@@ -187,10 +201,25 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
       <div className="w-full flex-shrink-0">
         <div className="relative bg-black">
           <div 
-            className="w-full h-0 pt-[56.25%] relative bg-black"
+            className="w-full h-0 pt-[56.25%] relative bg-black overflow-hidden"
             ref={playerContainerRef}
+            style={{ maxHeight: "calc(100vh * 0.4)" }}
           >
             {/* YouTube player will be inserted here */}
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                #youtube-player, 
+                #youtube-player iframe {
+                  position: absolute !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                  max-width: 100% !important;
+                  max-height: 100% !important;
+                }
+              `
+            }} />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-900 p-2 flex items-center justify-between">
