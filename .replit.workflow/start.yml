@@ -1,0 +1,3 @@
+name: Start application
+description: Starts the dev server
+command: npm run dev

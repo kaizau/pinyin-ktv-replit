@@ -1,0 +1,4 @@
+name: dev
+description: Run development server
+command: npm run dev
+port: 5000

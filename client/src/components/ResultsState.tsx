@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
 import YouTubePlayer from './YouTubePlayer';
+import ThemeToggle from './ThemeToggle';
 import { SongResult } from '@shared/schema';
 
 interface ResultsStateProps {

@@ -14,7 +14,7 @@ interface SearchResultsViewProps {
 }
 
 export default function SearchResultsView({ searchQuery, onSelectSong }: SearchResultsViewProps) {
-  // State for modified search query when no results are found
+  // State for modified query
   const [modifiedQuery, setModifiedQuery] = useState(searchQuery);
   const queryClient = useQueryClient();
   
@@ -41,6 +41,32 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
     
     const response = await axios.get('https://lrclib.net/api/search', { params });
     return response.data;
+  };
+
+  // Handle search with modified query
+  const handleSearch = async () => {
+    // Invalidate and refetch with the new query
+    await queryClient.invalidateQueries({
+      queryKey: ['lyrics-search'] 
+    });
+    
+    // Prefetch the new query
+    queryClient.prefetchQuery({
+      queryKey: ['lyrics-search', modifiedQuery],
+      queryFn: () => fetchSongs(modifiedQuery)
+    });
+    
+    // Trigger a refetch of the parent component by passing the modified query back
+    if (searchQuery !== modifiedQuery) {
+      // Update the parent component's searchQuery
+      const parentElement = document.getElementById('results-state-container');
+      if (parentElement) {
+        const event = new CustomEvent('search-modified', { 
+          detail: { searchQuery: modifiedQuery } 
+        });
+        parentElement.dispatchEvent(event);
+      }
+    }
   };
 
   const { data, isLoading, error } = useQuery<SongResult[]>({
@@ -79,58 +105,19 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
     );
   }
 
-  if (!data || data.length === 0) {
-    // Function to handle search with modified query
-    const handleSearch = async () => {
-      // Invalidate and refetch with the new query
-      await queryClient.invalidateQueries({
-        queryKey: ['lyrics-search'] 
-      });
-      
-      // Prefetch the new query
-      queryClient.prefetchQuery({
-        queryKey: ['lyrics-search', modifiedQuery],
-        queryFn: () => fetchSongs(modifiedQuery)
-      });
-      
-      // Trigger a refetch of the parent component by passing the modified query back
-      if (searchQuery !== modifiedQuery) {
-        // Update the parent component's searchQuery
-        const parentElement = document.getElementById('results-state-container');
-        if (parentElement) {
-          const event = new CustomEvent('search-modified', { 
-            detail: { searchQuery: modifiedQuery } 
-          });
-          parentElement.dispatchEvent(event);
-        }
-      }
-    };
-    
+  // Render the search input component
+  const renderSearchInput = () => {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-4">
-        <Alert className="w-full mb-4">
-          <AlertDescription className="flex items-start">
-            <svg className="h-5 w-5 mr-2 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <h3 className="text-sm font-medium">No lyrics found</h3>
-              <p className="mt-1 text-sm">
-                Try modifying the search query below
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
-        
-        <div className="w-full max-w-md">
+      <div className="mb-6">
+        <div className="w-full">
           <div className="mb-3">
-            <label htmlFor="modified-search" className="block text-sm font-medium mb-2">
-              Edit search query
+            <label htmlFor="search-query" className="block text-sm font-medium mb-2">
+              Search Query
             </label>
             <div className="flex gap-2">
               <Input
                 type="text"
-                id="modified-search"
+                id="search-query"
                 value={modifiedQuery}
                 onChange={(e) => setModifiedQuery(e.target.value)}
                 placeholder="Try: Artist - Song Title"
@@ -150,18 +137,80 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
           </div>
           
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Try using format: "Artist - Song Title" for better results
+            For better results, try using format: "Artist - Song Title"
           </p>
+        </div>
+      </div>
+    );
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="h-full p-4">
+        {renderSearchInput()}
+        <div className="space-y-4 w-full">
+          {Array(4).fill(0).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 animate-pulse">
+              <Skeleton className="w-12 h-12 rounded flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-3/4 rounded mb-2" />
+                <Skeleton className="h-3 w-1/2 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="h-full p-4">
+        {renderSearchInput()}
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>
+            Error loading search results: {(error as Error).message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Empty results state
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-full p-4">
+        {renderSearchInput()}
+        
+        <Alert className="mt-4">
+          <AlertDescription className="flex items-start">
+            <svg className="h-5 w-5 mr-2 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium">No lyrics found</h3>
+              <p className="mt-1 text-sm">
+                Try modifying the search query above
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Results state
   return (
     <div className="h-full overflow-y-auto p-3">
-      <p className="text-text-muted dark:text-gray-400 text-xs mb-3">
-        Showing results for: <span className="font-medium">{searchQuery}</span>
-      </p>
+      {renderSearchInput()}
+      
+      <div className="mb-4">
+        <p className="text-text-muted dark:text-gray-400 text-sm">
+          Found {data.length} result{data.length !== 1 ? 's' : ''} for: <span className="font-medium">{searchQuery}</span>
+        </p>
+      </div>
       
       <div className="space-y-3">
         {data.map((result) => (
