@@ -1,4 +1,4 @@
-name: start
-description: Start the application
-command: npm run dev
-port: 5000
+run: npm run dev
+onBoot: true
+persistent: true
+language: "nodejs"

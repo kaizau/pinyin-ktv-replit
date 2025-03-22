@@ -1,4 +1,3 @@
-name: dev
-description: Run development server
-command: npm run dev
-port: 5000
+run: npm run dev
+onBoot: true
+persistent: true
