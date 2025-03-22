@@ -10,6 +10,7 @@ export interface SongResult {
   albumName?: string;
   duration?: number;
   instrumental: boolean;
+  videoId?: string; // Added videoId to link the song to YouTube video
 }
 
 // Schema for LRCLIB lyrics response

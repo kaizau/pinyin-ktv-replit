@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
 import YouTubePlayer from './YouTubePlayer';
-import ThemeToggle from './ThemeToggle';
 import { SongResult } from '@shared/schema';
 
 interface ResultsStateProps {
@@ -17,13 +16,12 @@ interface ResultsStateProps {
 }
 
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
-  const [activeTab, setActiveTab] = useState<"video" | "lyrics" | "player">("video");
+  const [activeTab, setActiveTab] = useState<"video" | "lyrics" | "player">("lyrics");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
 
   // Reference to the seekTo function from the YouTube player
   const seekToRef = useRef<((time: number) => void) | null>(null);
-  const playerRef = useRef<YouTubePlayer | null>(null);
 
   // State for current search query (modifiable when search fails)
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
@@ -70,8 +68,13 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
   // Handle song selection
   const handleSongSelect = (song: SongResult) => {
-    setSelectedSong(song);
-    setActiveTab("lyrics");
+    // Add videoId to the selected song
+    const songWithVideoId = {
+      ...song,
+      videoId: videoData.videoId
+    };
+    setSelectedSong(songWithVideoId);
+    setActiveTab("player");
   };
 
   return (
@@ -87,17 +90,17 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             }}
             className={`px-3 py-1 hover:text-blue-500 ${activeTab === "video" ? 'text-blue-500' : 'text-gray-500'}`}
           >
-            Video
+            Home
           </a>
 
           <a 
             href="#" 
             onClick={() => setActiveTab("lyrics")}
             className={`px-3 py-1 hover:text-blue-500 ${activeTab === "lyrics" ? 'text-blue-500' : 'text-gray-500'}`}
-            style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
           >
             Lyrics
           </a>
+          
           <a 
             href="#" 
             onClick={() => setActiveTab("player")}
@@ -111,35 +114,15 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
       {/* Content area - depends on active tab */}
       <div className="flex-grow flex flex-col overflow-hidden">
-        {/* Video section - only shown when in lyrics tab */}
-        {activeTab === "lyrics" && (
-          <div className="w-full flex-shrink-0">
-            <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
-              <div 
-                id="player-container"
-                className="absolute inset-0 w-full h-full overflow-hidden"
-              >
-                {/* YouTube player */}
-                <YouTubePlayer 
-                  videoId={videoData.videoId}
-                  onTimeUpdate={setCurrentTime}
-                  onSeek={(seekFn) => {
-                    seekToRef.current = seekFn;
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Theme toggle in top right */}
-        <div className="absolute top-3 right-3">
-          <ThemeToggle />
-        </div>
-
         {/* Main content area */}
         <div className="flex-grow overflow-y-auto">
           {activeTab === "video" && (
+            <div className="h-full">
+              {/* This will trigger the return to input state */}
+            </div>
+          )}
+
+          {activeTab === "lyrics" && (
             <div className="h-full">
               <SearchResultsView 
                 searchQuery={currentSearchQuery} 
@@ -148,23 +131,35 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             </div>
           )}
 
-          {activeTab === "lyrics" && (
-            <div className="h-full p-3">
-              <LyricsView 
-                selectedSong={selectedSong} 
-                currentTime={currentTime}
-                onSeek={handleSeek}
-              />
-            </div>
-          )}
-
-          {activeTab === "player" && (
-            <div className="h-full p-3 flex justify-center">
-              <YouTubePlayer
-                videoId={selectedSong?.videoId || videoData.videoId}
-                onTimeUpdate={setCurrentTime}
-                ref={playerRef}
-              />
+          {activeTab === "player" && selectedSong && (
+            <div className="h-full flex flex-col">
+              {/* Video section */}
+              <div className="w-full flex-shrink-0">
+                <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
+                  <div 
+                    id="player-container"
+                    className="absolute inset-0 w-full h-full overflow-hidden"
+                  >
+                    {/* YouTube player */}
+                    <YouTubePlayer 
+                      videoId={selectedSong.videoId || videoData.videoId}
+                      onTimeUpdate={setCurrentTime}
+                      onSeek={(seekFn) => {
+                        seekToRef.current = seekFn;
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Lyrics section */}
+              <div className="flex-grow p-3 overflow-y-auto">
+                <LyricsView 
+                  selectedSong={selectedSong} 
+                  currentTime={currentTime}
+                  onSeek={handleSeek}
+                />
+              </div>
             </div>
           )}
         </div>
