@@ -17,22 +17,26 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Schema for Genius search results
+// Schema for LRCLIB search results
 export interface SongResult {
   id: number;
-  title: string;
-  artist: string;
-  album?: string;
-  year?: number;
-  thumbnailUrl?: string;
+  trackName: string;
+  artistName: string;
+  albumName?: string;
+  duration?: number;
+  instrumental: boolean;
 }
 
-// Schema for lyrics response
+// Schema for LRCLIB lyrics response
 export interface LyricsResponse {
   id: number;
-  title: string;
-  artist: string;
-  lyrics: string;
+  trackName: string;
+  artistName: string;
+  albumName?: string;
+  duration?: number;
+  instrumental: boolean;
+  plainLyrics: string;
+  syncedLyrics?: string;
 }
 
 // Schema for YouTube metadata
@@ -42,9 +46,11 @@ export interface YouTubeMetadata {
   author_name: string;
 }
 
-// Cache schema for storing lyrics
-export interface CachedLyrics {
-  id: number;
-  lyrics: string;
-  timestamp: number;
+// Interface for LRCLIB search parameters
+export interface LrcLibSearchParams {
+  track_name?: string;
+  artist_name?: string;
+  album_name?: string;
+  duration?: number;
+  q?: string;
 }

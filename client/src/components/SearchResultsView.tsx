@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
-import { SongResult } from '@shared/schema';
+import { SongResult, LrcLibSearchParams } from '@shared/schema';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import axios from 'axios';
 
 interface SearchResultsViewProps {
   searchQuery: string;
@@ -10,8 +11,29 @@ interface SearchResultsViewProps {
 }
 
 export default function SearchResultsView({ searchQuery, onSelectSong }: SearchResultsViewProps) {
+  const fetchSongs = async (query: string): Promise<SongResult[]> => {
+    // Build search parameters
+    const params: LrcLibSearchParams = {};
+    
+    // Split the query into potential artist and track components
+    const queryParts = query.split(' - ');
+    
+    if (queryParts.length > 1) {
+      // If query contains " - ", assume format is "Artist - Track"
+      params.artist_name = queryParts[0];
+      params.track_name = queryParts.slice(1).join(' - ');
+    } else {
+      // Otherwise use general search
+      params.q = query;
+    }
+    
+    const response = await axios.get('https://lrclib.net/api/search', { params });
+    return response.data;
+  };
+
   const { data, isLoading, error } = useQuery<SongResult[]>({
-    queryKey: [`/api/genius/search?q=${encodeURIComponent(searchQuery)}`],
+    queryKey: [`lrclib-search-${searchQuery}`],
+    queryFn: () => fetchSongs(searchQuery),
     enabled: !!searchQuery,
   });
 
@@ -78,19 +100,23 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
               onClick={() => onSelectSong(result)}
             >
               <div className="flex items-center gap-4">
-                {result.thumbnailUrl && (
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center overflow-hidden">
-                    <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center overflow-hidden text-gray-400">
+                  {result.instrumental ? (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
-                  </div>
-                )}
+                  ) : (
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                    </svg>
+                  )}
+                </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-lg">{result.title}</h3>
-                  <p className="text-text-muted dark:text-gray-400">{result.artist}</p>
-                  {result.album && (
+                  <h3 className="font-medium text-lg">{result.trackName}</h3>
+                  <p className="text-text-muted dark:text-gray-400">{result.artistName}</p>
+                  {result.albumName && (
                     <p className="text-xs text-text-muted dark:text-gray-500 mt-1">
-                      Album: {result.album} {result.year ? `• ${result.year}` : ''}
+                      Album: {result.albumName} {result.duration ? `• ${Math.floor(result.duration / 60)}:${(result.duration % 60).toString().padStart(2, '0')}` : ''}
                     </p>
                   )}
                 </div>

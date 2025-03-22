@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SongResult, LyricsResponse } from '@shared/schema';
 import { convertToPinyin } from '@/lib/pinyin';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 interface LyricsViewProps {
   selectedSong: SongResult | null;
@@ -18,16 +19,22 @@ interface LyricLine {
 export default function LyricsView({ selectedSong }: LyricsViewProps) {
   const [lyricsWithPinyin, setLyricsWithPinyin] = useState<LyricLine[]>([]);
   
+  const fetchLyrics = async (id: number): Promise<LyricsResponse> => {
+    const response = await axios.get(`https://lrclib.net/api/get/${id}`);
+    return response.data;
+  };
+
   const { data, isLoading, error } = useQuery<LyricsResponse>({
-    queryKey: [`/api/genius/lyrics/${selectedSong?.id}`],
+    queryKey: [`lrclib-lyrics-${selectedSong?.id}`],
+    queryFn: () => fetchLyrics(selectedSong!.id),
     enabled: !!selectedSong,
   });
 
   useEffect(() => {
-    if (data?.lyrics) {
+    if (data?.plainLyrics) {
       const processLyrics = async () => {
         // Split the lyrics into lines
-        const lines = data.lyrics.split('\n').filter(line => line.trim() !== '');
+        const lines = data.plainLyrics.split('\n').filter(line => line.trim() !== '');
         
         // Process each line to generate pinyin
         const processedLines = await Promise.all(
@@ -112,7 +119,7 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
     );
   }
 
-  if (!data || !data.lyrics) {
+  if (!data || (!data.plainLyrics && !data.instrumental)) {
     return (
       <Alert>
         <AlertDescription className="flex items-start">
@@ -130,6 +137,34 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
     );
   }
 
+  // Handle instrumental tracks
+  if (data.instrumental) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+              <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-medium text-lg">{data.trackName}</h3>
+              <p className="text-text-muted dark:text-gray-400">{data.artistName}</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
+            <h4 className="text-lg font-medium mb-2">Instrumental Track</h4>
+            <p className="text-text-muted dark:text-gray-400">
+              This is an instrumental track with no lyrics.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -140,8 +175,8 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
             </svg>
           </div>
           <div>
-            <h3 className="font-medium text-lg">{selectedSong.title}</h3>
-            <p className="text-text-muted dark:text-gray-400">{selectedSong.artist}</p>
+            <h3 className="font-medium text-lg">{data.trackName}</h3>
+            <p className="text-text-muted dark:text-gray-400">{data.artistName}</p>
           </div>
         </div>
         
