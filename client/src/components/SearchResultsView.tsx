@@ -1,8 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { SongResult, LrcLibSearchParams } from '@shared/schema';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import axios from 'axios';
 
 interface SearchResultsViewProps {
@@ -11,6 +14,15 @@ interface SearchResultsViewProps {
 }
 
 export default function SearchResultsView({ searchQuery, onSelectSong }: SearchResultsViewProps) {
+  // State for modified search query when no results are found
+  const [modifiedQuery, setModifiedQuery] = useState(searchQuery);
+  const queryClient = useQueryClient();
+  
+  // Update modifiedQuery when searchQuery changes
+  useEffect(() => {
+    setModifiedQuery(searchQuery);
+  }, [searchQuery]);
+  
   const fetchSongs = async (query: string): Promise<SongResult[]> => {
     // Build search parameters
     const params: LrcLibSearchParams = {};
@@ -32,7 +44,7 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
   };
 
   const { data, isLoading, error } = useQuery<SongResult[]>({
-    queryKey: [`lrclib-search-${searchQuery}`],
+    queryKey: [`lyrics-search`, searchQuery],
     queryFn: () => fetchSongs(searchQuery),
     enabled: !!searchQuery,
   });
@@ -68,9 +80,35 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
   }
 
   if (!data || data.length === 0) {
+    // Function to handle search with modified query
+    const handleSearch = async () => {
+      // Invalidate and refetch with the new query
+      await queryClient.invalidateQueries({
+        queryKey: ['lyrics-search'] 
+      });
+      
+      // Prefetch the new query
+      queryClient.prefetchQuery({
+        queryKey: ['lyrics-search', modifiedQuery],
+        queryFn: () => fetchSongs(modifiedQuery)
+      });
+      
+      // Trigger a refetch of the parent component by passing the modified query back
+      if (searchQuery !== modifiedQuery) {
+        // Update the parent component's searchQuery
+        const parentElement = document.getElementById('results-state-container');
+        if (parentElement) {
+          const event = new CustomEvent('search-modified', { 
+            detail: { searchQuery: modifiedQuery } 
+          });
+          parentElement.dispatchEvent(event);
+        }
+      }
+    };
+    
     return (
-      <div className="h-full flex items-center justify-center p-4">
-        <Alert className="w-full">
+      <div className="h-full flex flex-col items-center justify-center p-4">
+        <Alert className="w-full mb-4">
           <AlertDescription className="flex items-start">
             <svg className="h-5 w-5 mr-2 text-yellow-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -78,11 +116,43 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
             <div>
               <h3 className="text-sm font-medium">No lyrics found</h3>
               <p className="mt-1 text-sm">
-                Try modifying the search query or try another video
+                Try modifying the search query below
               </p>
             </div>
           </AlertDescription>
         </Alert>
+        
+        <div className="w-full max-w-md">
+          <div className="mb-3">
+            <label htmlFor="modified-search" className="block text-sm font-medium mb-2">
+              Edit search query
+            </label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                id="modified-search"
+                value={modifiedQuery}
+                onChange={(e) => setModifiedQuery(e.target.value)}
+                placeholder="Try: Artist - Song Title"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                onClick={handleSearch}
+              >
+                Search
+              </Button>
+            </div>
+          </div>
+          
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Try using format: "Artist - Song Title" for better results
+          </p>
+        </div>
       </div>
     );
   }

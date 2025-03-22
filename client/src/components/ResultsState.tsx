@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
@@ -42,8 +42,38 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     setActiveTab("lyrics");
   };
 
+  // State for current search query (modifiable when search fails)
+  const [currentSearchQuery, setCurrentSearchQuery] = useState(videoData ? videoData.searchQuery : '');
+  
+  // Effect to listen for search-modified events
+  useEffect(() => {
+    const handleSearchModified = (event: CustomEvent) => {
+      if (event.detail && event.detail.searchQuery) {
+        setCurrentSearchQuery(event.detail.searchQuery);
+      }
+    };
+    
+    const resultsContainer = document.getElementById('results-state-container');
+    if (resultsContainer) {
+      resultsContainer.addEventListener('search-modified', handleSearchModified as EventListener);
+    }
+    
+    return () => {
+      if (resultsContainer) {
+        resultsContainer.removeEventListener('search-modified', handleSearchModified as EventListener);
+      }
+    };
+  }, []);
+  
+  // Set initial search query when videoData changes
+  useEffect(() => {
+    if (videoData) {
+      setCurrentSearchQuery(videoData.searchQuery);
+    }
+  }, [videoData?.searchQuery]);
+
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div id="results-state-container" className="flex flex-col h-screen overflow-hidden">
       {/* Streamlined navigation bar */}
       <div className="w-full bg-white dark:bg-gray-900 py-2 px-4 flex items-center justify-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
         <div className="flex items-center space-x-4 text-sm">
@@ -102,7 +132,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
           {activeTab === "search" && (
             <div className="h-full p-3">
               <SearchResultsView 
-                searchQuery={videoData.searchQuery} 
+                searchQuery={currentSearchQuery} 
                 onSelectSong={handleSongSelect}
               />
             </div>
