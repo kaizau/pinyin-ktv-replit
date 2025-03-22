@@ -27,28 +27,40 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     return null;
   }
 
-  // Simple time tracking functions to update the current time
+  // Track time manually since iframe API has limited time tracking
   const startTimeTracking = () => {
     if (intervalRef.current) {
       window.clearInterval(intervalRef.current);
     }
     
-    // Create a simple timer that updates every 200ms
+    let startTracking = Date.now();
+    let accumulatedTime = currentTime; // Start from current time
+    
+    console.log('Starting time tracking from', accumulatedTime);
+    
+    // Create a timer that updates every 100ms for smoother syncing
     intervalRef.current = window.setInterval(() => {
-      // For manual tracking, we'll just increment the time ourselves
-      // This is a fallback if we can't get the actual time from YouTube
-      setCurrentTime(prev => prev + 0.2);
+      // Calculate elapsed time since tracking started
+      const elapsed = (Date.now() - startTracking) / 1000;
+      const newTime = accumulatedTime + elapsed;
       
-      // Try to get actual time from iframe
+      setCurrentTime(newTime);
+      
+      // Also try to send a postMessage to get the time from YouTube
+      // (This likely won't work due to iframe restrictions)
       try {
         const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
         if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage('{"event":"command","func":"getCurrentTime","args":""}', '*');
+          iframe.contentWindow.postMessage(JSON.stringify({
+            event: 'command',
+            func: 'getCurrentTime',
+            args: []
+          }), '*');
         }
       } catch (e) {
-        console.error("Error in time tracking:", e);
+        // Silent error - just continue with our manual tracking
       }
-    }, 200);
+    }, 100); // More frequent updates for smoother syncing
   };
   
   const stopTimeTracking = () => {
@@ -61,10 +73,23 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   // Function to handle seeking to a specific time in the video
   const handleSeek = (time: number) => {
     try {
+      // First reset our tracking to match the target time
+      setCurrentTime(time);
+      
+      // Ensure we restart tracking from this new time
+      stopTimeTracking();
+      
+      // Find and control the iframe
       const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
       if (iframe && iframe.contentWindow) {
         // Format matches YouTube's expected message format
         iframe.contentWindow.postMessage(`{"event":"command","func":"seekTo","args":[${time},true]}`, '*');
+        
+        // Restart time tracking from this time
+        setTimeout(() => {
+          console.log('Restarting time tracking from seek position:', time);
+          startTimeTracking();
+        }, 500);
       }
     } catch (e) {
       console.error("Error seeking:", e);
@@ -98,6 +123,28 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     // Add iframe to container
     playerContainerRef.current.appendChild(iframe);
     console.log('YouTube iframe created');
+    
+    // Since the iframe API doesn't provide reliable player state info,
+    // we'll manually detect clicks on the video element and start tracking
+    const startManualTracking = () => {
+      // Use a click handler on the container to start tracking
+      // (This will be triggered when the user clicks play)
+      const playerContainer = document.getElementById('player-container');
+      if (playerContainer) {
+        playerContainer.addEventListener('click', () => {
+          // Small delay to let the player start
+          setTimeout(() => {
+            console.log('Manual tracking started via click');
+            // Set current time to 0 when user first interacts
+            setCurrentTime(0);
+            startTimeTracking();
+          }, 500);
+        });
+      }
+    };
+    
+    // Give the iframe a moment to load
+    setTimeout(startManualTracking, 1000);
     
     // Clean up function
     return () => {
