@@ -1,5 +1,6 @@
 [run]
-name = "Run App"
+command = "npm run dev"
+name = "Start application"
 onBoot = false
 
 [run.environment]
