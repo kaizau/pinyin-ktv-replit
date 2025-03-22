@@ -56,7 +56,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             Back
           </Button>
           
-          <span className="text-gray-400 mx-0.5">/</span>
+          <span className="text-gray-400 mx-0.5">→</span>
           
           <Button
             variant={activeTab === "search" ? "secondary" : "ghost"}
@@ -67,7 +67,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             Search
           </Button>
           
-          <span className="text-gray-400 mx-0.5">/</span>
+          <span className="text-gray-400 mx-0.5">→</span>
           
           <Button
             variant={activeTab === "lyrics" ? "secondary" : "ghost"}
