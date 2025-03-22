@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SongResult } from '@shared/schema';
 
 interface ResultsStateProps {
@@ -15,55 +14,12 @@ interface ResultsStateProps {
   onReturn: () => void;
 }
 
-// Define YouTube API types for TypeScript
-declare global {
-  interface Window {
-    YT: {
-      Player: new (
-        elementId: string,
-        options: {
-          videoId: string;
-          playerVars?: {
-            autoplay?: number;
-            modestbranding?: number;
-            rel?: number;
-            playsinline?: number;
-            [key: string]: any;
-          };
-          events?: {
-            onReady?: (event: any) => void;
-            onStateChange?: (event: any) => void;
-            onError?: (event: any) => void;
-            [key: string]: any;
-          };
-        }
-      ) => YTPlayer;
-      PlayerState?: {
-        PLAYING: number;
-        PAUSED: number;
-        ENDED: number;
-        BUFFERING: number;
-      };
-    };
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
-// Custom type for our player reference (supports both YT.Player and our manual fallback)
-interface YTPlayer {
-  seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
-  getCurrentTime: () => number;
-  destroy: () => void;
-  [key: string]: any;
-}
-
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
   const [activeTab, setActiveTab] = useState("search");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [playerReady, setPlayerReady] = useState<boolean>(false);
   
-  const playerRef = useRef<YTPlayer | null>(null);
+  // Refs for player and intervals
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -71,64 +27,26 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     return null;
   }
 
-  // Load YouTube API
-  useEffect(() => {
-    const loadYouTubeAPI = () => {
-      // Only load the API once
-      if (!document.getElementById('youtube-api')) {
-        console.log('Loading YouTube API...');
-        // Setup callback before loading script
-        window.onYouTubeIframeAPIReady = () => {
-          console.log('YouTube API is ready');
-          setPlayerReady(true);
-        };
-        
-        // Create and insert script
-        const tag = document.createElement('script');
-        tag.id = 'youtube-api';
-        tag.src = 'https://www.youtube.com/iframe_api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      } else {
-        // If script is already loaded, check if YT object exists
-        if (window.YT && window.YT.Player) {
-          console.log('YouTube API already loaded');
-          setPlayerReady(true);
-        } else {
-          console.log('YouTube API script exists but not ready yet');
-          // Set up callback anyway as a fallback
-          window.onYouTubeIframeAPIReady = () => {
-            console.log('YouTube API is ready (fallback)');
-            setPlayerReady(true);
-          };
-        }
-      }
-    };
-
-    loadYouTubeAPI();
-    
-    return () => {
-      // Clean up the player when component unmounts
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          console.error("Error destroying YouTube player:", e);
-        }
-      }
-    };
-  }, []);
-  
-  // Start/stop time tracking functions
+  // Simple time tracking functions to update the current time
   const startTimeTracking = () => {
     if (intervalRef.current) {
       window.clearInterval(intervalRef.current);
     }
     
-    // Update time every 200ms
+    // Create a simple timer that updates every 200ms
     intervalRef.current = window.setInterval(() => {
-      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-        setCurrentTime(playerRef.current.getCurrentTime());
+      // For manual tracking, we'll just increment the time ourselves
+      // This is a fallback if we can't get the actual time from YouTube
+      setCurrentTime(prev => prev + 0.2);
+      
+      // Try to get actual time from iframe
+      try {
+        const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage('{"event":"command","func":"getCurrentTime","args":""}', '*');
+        }
+      } catch (e) {
+        console.error("Error in time tracking:", e);
       }
     }, 200);
   };
@@ -140,158 +58,106 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     }
   };
 
-  // Initialize YouTube player once the API is ready
+  // Function to handle seeking to a specific time in the video
+  const handleSeek = (time: number) => {
+    try {
+      const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
+      if (iframe && iframe.contentWindow) {
+        // Format matches YouTube's expected message format
+        iframe.contentWindow.postMessage(`{"event":"command","func":"seekTo","args":[${time},true]}`, '*');
+      }
+    } catch (e) {
+      console.error("Error seeking:", e);
+    }
+  };
+
+  // Setup YouTube player when active tab changes
   useEffect(() => {
-    if (!playerReady || !videoData?.videoId || !playerContainerRef.current) {
-      console.log('Conditions not met for player creation:', { 
-        playerReady, 
-        hasVideoId: !!videoData?.videoId, 
-        hasContainer: !!playerContainerRef.current 
-      });
+    if (activeTab !== "lyrics" || !playerContainerRef.current || !videoData?.videoId) {
       return;
     }
     
-    console.log('Attempting to create YouTube player for video:', videoData.videoId);
+    console.log('Setting up YouTube player for:', videoData.videoId);
     
-    // Create an iframe directly instead of using YT.Player
-    const createPlayerManually = () => {
-      if (!playerContainerRef.current) return;
-      
-      // Clear container first
+    // Clear container first
+    if (playerContainerRef.current) {
       playerContainerRef.current.innerHTML = '';
-      
-      // Create iframe element
-      const iframe = document.createElement('iframe');
-      iframe.id = 'youtube-player-iframe';
-      iframe.width = '100%';
-      iframe.height = '100%';
-      iframe.src = `https://www.youtube.com/embed/${videoData.videoId}?enablejsapi=1&origin=${window.location.origin}&modestbranding=1&playsinline=1&rel=0&controls=1`;
-      iframe.allowFullscreen = true;
-      iframe.frameBorder = '0';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-      
-      playerContainerRef.current.appendChild(iframe);
-      console.log('Created YouTube iframe manually');
-      
-      // We'll need to implement a simpler seek method
-      // that uses postMessage to control the iframe
-      playerRef.current = {
-        seekTo: (seconds: number) => {
-          const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
-          if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command',
-              func: 'seekTo',
-              args: [seconds, true]
-            }), '*');
-          }
-        },
-        getCurrentTime: () => {
-          // This is a limitation - we can't easily get current time
-          // We could track it ourselves approximately
-          return currentTime;
-        },
-        destroy: () => {
-          if (playerContainerRef.current) {
-            playerContainerRef.current.innerHTML = '';
-          }
-        }
-      };
-    };
+    }
     
-    // Try with YouTube API first
-    const createPlayerWithAPI = () => {
-      if (!playerContainerRef.current || !window.YT || !window.YT.Player) {
-        console.log('YT API not available, falling back to manual iframe');
-        createPlayerManually();
-        return;
-      }
-      
-      // Clear the container first
-      playerContainerRef.current.innerHTML = '';
-      
-      // Create player div
-      const playerDiv = document.createElement('div');
-      playerDiv.id = 'youtube-player';
-      playerDiv.style.position = 'absolute';
-      playerDiv.style.top = '0';
-      playerDiv.style.left = '0';
-      playerDiv.style.width = '100%';
-      playerDiv.style.height = '100%';
-      playerContainerRef.current.appendChild(playerDiv);
-      
-      try {
-        console.log('Creating player with YT API...');
-        // Create YouTube player
-        playerRef.current = new window.YT.Player('youtube-player', {
-          videoId: videoData.videoId,
-          playerVars: {
-            autoplay: 0, // Disable autoplay
-            modestbranding: 1,
-            playsinline: 1,
-            rel: 0,
-            fs: 1, // Enable fullscreen button
-            controls: 1
-          },
-          events: {
-            onReady: () => {
-              console.log('YouTube player ready');
-              startTimeTracking();
-            },
-            onStateChange: (event: any) => {
-              if (event.data === 1) { // Playing
-                startTimeTracking();
-              } else {
-                stopTimeTracking();
-              }
-            },
-            onError: (event: any) => {
-              console.error('YouTube player error:', event.data);
-              // Fall back to manual iframe on error
-              createPlayerManually();
-            }
-          }
-        });
-      } catch (e) {
-        console.error("Error creating YouTube player:", e);
-        createPlayerManually();
-      }
-    };
+    // Create a simple iframe embed
+    const iframe = document.createElement('iframe');
+    iframe.id = 'youtube-player-iframe';
+    iframe.width = '100%';
+    iframe.height = '100%';
+    // Use standard YouTube embed URL
+    iframe.src = `https://www.youtube.com/embed/${videoData.videoId}?enablejsapi=1&origin=${window.location.origin}&modestbranding=1&playsinline=1&rel=0&controls=1`;
+    iframe.frameBorder = '0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+    iframe.setAttribute('allowFullScreen', '');
     
-    // Try API method first, with a fallback
-    createPlayerWithAPI();
+    // Add iframe to container
+    playerContainerRef.current.appendChild(iframe);
+    console.log('YouTube iframe created');
     
+    // Clean up function
     return () => {
       stopTimeTracking();
-      if (playerRef.current) {
-        try {
-          if (typeof playerRef.current.destroy === 'function') {
-            playerRef.current.destroy();
-          }
-        } catch (e) {
-          console.error("Error destroying YouTube player:", e);
-        }
+      if (playerContainerRef.current) {
+        playerContainerRef.current.innerHTML = '';
       }
     };
-  }, [playerReady, videoData?.videoId, currentTime]);
+  }, [activeTab, videoData?.videoId]);
   
-  // Cleanup interval on unmount
+  // Listen for messages from the YouTube iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Only process messages from YouTube
+      if (event.origin !== "https://www.youtube.com") return;
+      
+      try {
+        // Try to parse the message as JSON
+        const data = JSON.parse(event.data);
+        
+        // Check if it's a player state event
+        if (data.event === "onStateChange") {
+          // 1 = playing
+          if (data.info === 1) {
+            startTimeTracking();
+          } else {
+            stopTimeTracking();
+          }
+        }
+        
+        // If it's a time update
+        if (data.event === "currentTime") {
+          setCurrentTime(data.info);
+        }
+      } catch (e) {
+        // Not our message or not in JSON format
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener("message", handleMessage);
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      stopTimeTracking();
+    };
+  }, []);
+  
+  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopTimeTracking();
     };
   }, []);
-
+  
+  // Handle song selection
   const handleSongSelect = (song: SongResult) => {
     setSelectedSong(song);
     setActiveTab("lyrics");
-  };
-  
-  // Function to seek to a specific time in the video
-  const handleSeek = (time: number) => {
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-      playerRef.current.seekTo(time);
-    }
   };
 
   return (
