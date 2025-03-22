@@ -1,1 +1,1 @@
-{"dev":{"command":"npm run dev","startOnOrigin":true,"persistent":true,"runOnStartup":true}}
+{"start":{"command":"npm run dev","startOnOrigin":true,"persistent":true,"runOnStartup":true}}
