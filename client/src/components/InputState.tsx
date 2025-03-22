@@ -43,6 +43,16 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
         setSongTitle(title);
         setShowSongInfo(true);
         setIsLoading(false);
+        
+        // Automatically submit for search if we have valid data
+        if (videoId && title) {
+          onVideoSubmit({
+            videoId,
+            title,
+            channel,
+            searchQuery: title
+          });
+        }
       } catch (err) {
         setIsLoading(false);
         setError('Could not extract video information. Please check the URL and try again.');

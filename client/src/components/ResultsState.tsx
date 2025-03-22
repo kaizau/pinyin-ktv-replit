@@ -134,37 +134,44 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     playerDiv.style.height = '100%';
     playerContainerRef.current.appendChild(playerDiv);
     
-    // Create YouTube player
-    playerRef.current = new window.YT.Player('youtube-player', {
-      videoId: videoData.videoId,
-      playerVars: {
-        autoplay: 0, // Disable autoplay
-        modestbranding: 1,
-        playsinline: 1,
-        rel: 0,
-        fs: 0, // Disable fullscreen button
-        controls: 1
-      },
-      events: {
-        onReady: () => {
-          console.log('YouTube player ready');
-          // Start tracking time when player is ready
-          startTimeTracking();
-        },
-        onStateChange: (event: any) => {
-          // State 1 is playing
-          if (event.data === 1) {
-            startTimeTracking();
-          } else {
-            // Pause, stop, etc.
-            stopTimeTracking();
+    // Wait a brief moment to ensure DOM is ready
+    setTimeout(() => {
+      try {
+        // Create YouTube player
+        playerRef.current = new window.YT.Player('youtube-player', {
+          videoId: videoData.videoId,
+          playerVars: {
+            autoplay: 0, // Disable autoplay
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            fs: 1, // Enable fullscreen button
+            controls: 1
+          },
+          events: {
+            onReady: () => {
+              console.log('YouTube player ready');
+              // Start tracking time when player is ready
+              startTimeTracking();
+            },
+            onStateChange: (event: any) => {
+              // State 1 is playing
+              if (event.data === window.YT.PlayerState?.PLAYING) {
+                startTimeTracking();
+              } else {
+                // Pause, stop, etc.
+                stopTimeTracking();
+              }
+            },
+            onError: (event: any) => {
+              console.error('YouTube player error:', event.data);
+            }
           }
-        },
-        onError: (event: any) => {
-          console.error('YouTube player error:', event.data);
-        }
+        });
+      } catch (e) {
+        console.error("Error creating YouTube player:", e);
       }
-    });
+    }, 300);
     
     return () => {
       stopTimeTracking();
@@ -188,6 +195,13 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   const handleSongSelect = (song: SongResult) => {
     setSelectedSong(song);
     setActiveTab("lyrics");
+  };
+  
+  // Function to seek to a specific time in the video
+  const handleSeek = (time: number) => {
+    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+      playerRef.current.seekTo(time);
+    }
   };
 
   return (
@@ -279,6 +293,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
               <LyricsView 
                 selectedSong={selectedSong} 
                 currentTime={currentTime}
+                onSeek={handleSeek}
               />
             </div>
           )}
