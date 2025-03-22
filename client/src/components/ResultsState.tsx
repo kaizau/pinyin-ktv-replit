@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import ThemeToggle from './ThemeToggle';
 import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
@@ -139,7 +138,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     playerRef.current = new window.YT.Player('youtube-player', {
       videoId: videoData.videoId,
       playerVars: {
-        autoplay: 1,
+        autoplay: 0, // Disable autoplay
         modestbranding: 1,
         playsinline: 1,
         rel: 0,
@@ -193,75 +192,97 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Video section - always on top, fixed height to prevent layout issues */}
-      <div className="w-full flex-shrink-0">
-        {/* Fixed height container for video with contained overflow */}
-        <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
-          {/* Player container with maintained aspect ratio */}
-          <div 
-            id="player-container"
-            className="absolute inset-0 w-full h-full overflow-hidden"
-            ref={playerContainerRef}
+      {/* Breadcrumb navigation bar */}
+      <div className="w-full bg-white dark:bg-gray-900 p-3 flex items-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+        <div className="flex items-center space-x-2 text-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReturn}
+            className="flex items-center px-2 py-1"
           >
-            {/* YouTube player will be inserted here */}
-          </div>
+            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Choose Video
+          </Button>
+          
+          <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <Button
+            variant={activeTab === "search" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("search")}
+            className="flex items-center px-2 py-1"
+          >
+            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Choose Lyrics
+          </Button>
+          
+          <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          
+          <Button
+            variant={activeTab === "lyrics" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("lyrics")}
+            className="flex items-center px-2 py-1"
+            disabled={!selectedSong}
+          >
+            <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+            Player
+          </Button>
         </div>
-        <div className="bg-white dark:bg-gray-900 p-2 flex items-center justify-between">
-          <div className="flex-1 truncate">
-            <h2 className="font-medium text-sm truncate">{videoData.title}</h2>
-            <p className="text-text-muted dark:text-gray-400 text-xs truncate">{videoData.channel}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReturn}
-              className="flex-shrink-0"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span className="sr-only md:not-sr-only md:ml-2">New Search</span>
-            </Button>
-            <ThemeToggle />
-          </div>
+        
+        <div className="ml-auto flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+          {videoData.title}
         </div>
       </div>
 
-      {/* Content section - takes remaining height, scrollable internally */}
-      <div className="flex-grow overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          <TabsList className="w-full bg-white dark:bg-gray-900 shadow-md flex-shrink-0 z-10">
-            <TabsTrigger value="search" className="flex-1">
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Search Results
-            </TabsTrigger>
-            <TabsTrigger value="lyrics" className="flex-1">
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-              Lyrics
-            </TabsTrigger>
-          </TabsList>
+      {/* Content area - depends on active tab */}
+      <div className="flex-grow flex flex-col overflow-hidden">
+        {/* Video section - only shown when in lyrics tab */}
+        {activeTab === "lyrics" && (
+          <div className="w-full flex-shrink-0">
+            <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
+              <div 
+                id="player-container"
+                className="absolute inset-0 w-full h-full overflow-hidden"
+                ref={playerContainerRef}
+              >
+                {/* YouTube player will be inserted here */}
+              </div>
+            </div>
+          </div>
+        )}
 
-          <div className="flex-grow overflow-y-auto h-full">
-            <TabsContent value="search" className="mt-0 p-3 h-full">
+        {/* Main content area */}
+        <div className="flex-grow overflow-y-auto">
+          {activeTab === "search" && (
+            <div className="h-full p-3">
               <SearchResultsView 
                 searchQuery={videoData.searchQuery} 
                 onSelectSong={handleSongSelect}
               />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="lyrics" className="mt-0 p-3 h-full">
+          {activeTab === "lyrics" && (
+            <div className="h-full p-3">
               <LyricsView 
                 selectedSong={selectedSong} 
                 currentTime={currentTime}
               />
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
