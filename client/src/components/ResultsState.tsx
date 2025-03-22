@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
 import LyricsView from './LyricsView';
+import YouTubePlayer from './YouTubePlayer';
 import { SongResult } from '@shared/schema';
 
 interface ResultsStateProps {
@@ -19,187 +20,21 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   
-  // Refs for player and intervals
-  const playerContainerRef = useRef<HTMLDivElement>(null);
-  const intervalRef = useRef<number | null>(null);
+  // Reference to the seekTo function from the YouTube player
+  const seekToRef = useRef<((time: number) => void) | null>(null);
 
   if (!videoData) {
     return null;
   }
 
-  // Track time manually since iframe API has limited time tracking
-  const startTimeTracking = () => {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-    }
-    
-    let startTracking = Date.now();
-    let accumulatedTime = currentTime; // Start from current time
-    
-    console.log('Starting time tracking from', accumulatedTime);
-    
-    // Create a timer that updates every 100ms for smoother syncing
-    intervalRef.current = window.setInterval(() => {
-      // Calculate elapsed time since tracking started
-      const elapsed = (Date.now() - startTracking) / 1000;
-      const newTime = accumulatedTime + elapsed;
-      
-      setCurrentTime(newTime);
-      
-      // Also try to send a postMessage to get the time from YouTube
-      // (This likely won't work due to iframe restrictions)
-      try {
-        const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
-          iframe.contentWindow.postMessage(JSON.stringify({
-            event: 'command',
-            func: 'getCurrentTime',
-            args: []
-          }), '*');
-        }
-      } catch (e) {
-        // Silent error - just continue with our manual tracking
-      }
-    }, 100); // More frequent updates for smoother syncing
-  };
-  
-  const stopTimeTracking = () => {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
   // Function to handle seeking to a specific time in the video
   const handleSeek = (time: number) => {
-    try {
-      // First reset our tracking to match the target time
-      setCurrentTime(time);
-      
-      // Ensure we restart tracking from this new time
-      stopTimeTracking();
-      
-      // Find and control the iframe
-      const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
-      if (iframe && iframe.contentWindow) {
-        // Format matches YouTube's expected message format
-        iframe.contentWindow.postMessage(`{"event":"command","func":"seekTo","args":[${time},true]}`, '*');
-        
-        // Restart time tracking from this time
-        setTimeout(() => {
-          console.log('Restarting time tracking from seek position:', time);
-          startTimeTracking();
-        }, 500);
-      }
-    } catch (e) {
-      console.error("Error seeking:", e);
+    if (seekToRef.current) {
+      seekToRef.current(time);
     }
+    // Update our current time state as well
+    setCurrentTime(time);
   };
-
-  // Setup YouTube player when active tab changes
-  useEffect(() => {
-    if (activeTab !== "lyrics" || !playerContainerRef.current || !videoData?.videoId) {
-      return;
-    }
-    
-    console.log('Setting up YouTube player for:', videoData.videoId);
-    
-    // Clear container first
-    if (playerContainerRef.current) {
-      playerContainerRef.current.innerHTML = '';
-    }
-    
-    // Create a simple iframe embed
-    const iframe = document.createElement('iframe');
-    iframe.id = 'youtube-player-iframe';
-    iframe.width = '100%';
-    iframe.height = '100%';
-    // Use standard YouTube embed URL
-    iframe.src = `https://www.youtube.com/embed/${videoData.videoId}?enablejsapi=1&origin=${window.location.origin}&modestbranding=1&playsinline=1&rel=0&controls=1`;
-    iframe.frameBorder = '0';
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
-    iframe.setAttribute('allowFullScreen', '');
-    
-    // Add iframe to container
-    playerContainerRef.current.appendChild(iframe);
-    console.log('YouTube iframe created');
-    
-    // Since the iframe API doesn't provide reliable player state info,
-    // we'll manually detect clicks on the video element and start tracking
-    const startManualTracking = () => {
-      // Use a click handler on the container to start tracking
-      // (This will be triggered when the user clicks play)
-      const playerContainer = document.getElementById('player-container');
-      if (playerContainer) {
-        playerContainer.addEventListener('click', () => {
-          // Small delay to let the player start
-          setTimeout(() => {
-            console.log('Manual tracking started via click');
-            // Set current time to 0 when user first interacts
-            setCurrentTime(0);
-            startTimeTracking();
-          }, 500);
-        });
-      }
-    };
-    
-    // Give the iframe a moment to load
-    setTimeout(startManualTracking, 1000);
-    
-    // Clean up function
-    return () => {
-      stopTimeTracking();
-      if (playerContainerRef.current) {
-        playerContainerRef.current.innerHTML = '';
-      }
-    };
-  }, [activeTab, videoData?.videoId]);
-  
-  // Listen for messages from the YouTube iframe
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      // Only process messages from YouTube
-      if (event.origin !== "https://www.youtube.com") return;
-      
-      try {
-        // Try to parse the message as JSON
-        const data = JSON.parse(event.data);
-        
-        // Check if it's a player state event
-        if (data.event === "onStateChange") {
-          // 1 = playing
-          if (data.info === 1) {
-            startTimeTracking();
-          } else {
-            stopTimeTracking();
-          }
-        }
-        
-        // If it's a time update
-        if (data.event === "currentTime") {
-          setCurrentTime(data.info);
-        }
-      } catch (e) {
-        // Not our message or not in JSON format
-      }
-    };
-    
-    // Add event listener
-    window.addEventListener("message", handleMessage);
-    
-    // Cleanup function
-    return () => {
-      window.removeEventListener("message", handleMessage);
-      stopTimeTracking();
-    };
-  }, []);
-  
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      stopTimeTracking();
-    };
-  }, []);
   
   // Handle song selection
   const handleSongSelect = (song: SongResult) => {
@@ -272,9 +107,15 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
               <div 
                 id="player-container"
                 className="absolute inset-0 w-full h-full overflow-hidden"
-                ref={playerContainerRef}
               >
-                {/* YouTube player will be inserted here */}
+                {/* YouTube player */}
+                <YouTubePlayer 
+                  videoId={videoData.videoId}
+                  onTimeUpdate={setCurrentTime}
+                  onSeek={(seekFn) => {
+                    seekToRef.current = seekFn;
+                  }}
+                />
               </div>
             </div>
           </div>
