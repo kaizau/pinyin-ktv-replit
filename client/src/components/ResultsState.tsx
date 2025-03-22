@@ -81,7 +81,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     <div id="results-state-container" className="flex flex-col h-screen overflow-hidden">
       {/* Streamlined navigation bar */}
       <div className="w-full bg-white dark:bg-gray-900 py-2 px-4 flex items-center justify-center border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
-        <div className="flex items-center space-x-4 text-sm mx-auto max-w-[1600px] w-full px-4">
+        <div className="flex items-center space-x-4 text-sm">
           <a 
             href="#" 
             onClick={() => {
@@ -124,19 +124,17 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
           {activeTab === "lyrics" && (
             <div className="h-full">
-              <div className="mx-auto max-w-[1600px] px-4">
-                <SearchResultsView 
-                  searchQuery={currentSearchQuery} 
-                  onSelectSong={handleSongSelect}
-                />
-              </div>
+              <SearchResultsView 
+                searchQuery={currentSearchQuery} 
+                onSelectSong={handleSongSelect}
+              />
             </div>
           )}
 
           {activeTab === "player" && selectedSong && (
-            <div className="h-full flex flex-col lg:flex-row mx-auto max-w-[1600px] px-4">
-              {/* Video section - full width on mobile, flexible width on desktop */}
-              <div className="w-full lg:flex-grow flex-shrink-0">
+            <div className="h-full flex flex-col lg:flex-row">
+              {/* Video section - full width on mobile, left column on desktop */}
+              <div className="w-full lg:w-1/2 flex-shrink-0">
                 <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] lg:h-full relative overflow-hidden">
                   <div 
                     id="player-container"
@@ -154,8 +152,8 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
                 </div>
               </div>
               
-              {/* Lyrics section - below on mobile, fixed 400px width on desktop */}
-              <div className="flex-grow lg:flex-grow-0 lg:w-[400px] p-3 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800">
+              {/* Lyrics section - below on mobile, right column on desktop */}
+              <div className="flex-grow lg:w-1/2 p-3 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800">
                 <LyricsView 
                   selectedSong={selectedSong} 
                   currentTime={currentTime}
