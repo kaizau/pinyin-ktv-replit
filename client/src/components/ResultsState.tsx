@@ -56,7 +56,11 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             Back
           </Button>
           
-          <span className="text-gray-400 mx-0.5">→</span>
+          <span className="text-gray-400 mx-1 flex items-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </span>
           
           <Button
             variant={activeTab === "search" ? "secondary" : "ghost"}
@@ -67,7 +71,11 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             Search
           </Button>
           
-          <span className="text-gray-400 mx-0.5">→</span>
+          <span className="text-gray-400 mx-1 flex items-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </span>
           
           <Button
             variant={activeTab === "lyrics" ? "secondary" : "ghost"}
