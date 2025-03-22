@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
 import { Button } from "@/components/ui/button";
 import SearchResultsView from './SearchResultsView';
@@ -16,13 +16,165 @@ interface ResultsStateProps {
   onReturn: () => void;
 }
 
+// Define YouTube API types for TypeScript
+declare global {
+  interface Window {
+    YT: {
+      Player: new (
+        elementId: string,
+        options: {
+          videoId: string;
+          playerVars?: {
+            autoplay?: number;
+            modestbranding?: number;
+            rel?: number;
+            playsinline?: number;
+            [key: string]: any;
+          };
+          events?: {
+            onReady?: (event: any) => void;
+            onStateChange?: (event: any) => void;
+            onError?: (event: any) => void;
+            [key: string]: any;
+          };
+        }
+      ) => any;
+      PlayerState?: {
+        PLAYING: number;
+        PAUSED: number;
+        ENDED: number;
+        BUFFERING: number;
+      };
+    };
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
   const [activeTab, setActiveTab] = useState("search");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [playerReady, setPlayerReady] = useState<boolean>(false);
+  
+  const playerRef = useRef<any>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<number | null>(null);
 
   if (!videoData) {
     return null;
   }
+
+  // Load YouTube API
+  useEffect(() => {
+    // Only load the API once
+    if (!document.getElementById('youtube-api')) {
+      const tag = document.createElement('script');
+      tag.id = 'youtube-api';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      
+      // Define callback for when API is ready
+      window.onYouTubeIframeAPIReady = () => {
+        setPlayerReady(true);
+      };
+    } else {
+      // If script is already loaded
+      setPlayerReady(true);
+    }
+    
+    return () => {
+      // Clean up the player when component unmounts
+      if (playerRef.current) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error("Error destroying YouTube player:", e);
+        }
+      }
+    };
+  }, []);
+  
+  // Start/stop time tracking functions
+  const startTimeTracking = () => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+    }
+    
+    // Update time every 200ms
+    intervalRef.current = window.setInterval(() => {
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        setCurrentTime(playerRef.current.getCurrentTime());
+      }
+    }, 200);
+  };
+  
+  const stopTimeTracking = () => {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  // Initialize YouTube player once the API is ready
+  useEffect(() => {
+    if (!playerReady || !videoData?.videoId || !playerContainerRef.current) return;
+    
+    // Create player div
+    if (!document.getElementById('youtube-player')) {
+      const playerDiv = document.createElement('div');
+      playerDiv.id = 'youtube-player';
+      playerContainerRef.current.appendChild(playerDiv);
+    }
+    
+    // Create YouTube player
+    playerRef.current = new window.YT.Player('youtube-player', {
+      videoId: videoData.videoId,
+      playerVars: {
+        autoplay: 1,
+        modestbranding: 1,
+        playsinline: 1,
+        rel: 0
+      },
+      events: {
+        onReady: () => {
+          console.log('YouTube player ready');
+          // Start tracking time when player is ready
+          startTimeTracking();
+        },
+        onStateChange: (event: any) => {
+          // State 1 is playing
+          if (event.data === 1) {
+            startTimeTracking();
+          } else {
+            // Pause, stop, etc.
+            stopTimeTracking();
+          }
+        },
+        onError: (event: any) => {
+          console.error('YouTube player error:', event.data);
+        }
+      }
+    });
+    
+    return () => {
+      stopTimeTracking();
+      if (playerRef.current) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error("Error destroying YouTube player:", e);
+        }
+      }
+    };
+  }, [playerReady, videoData?.videoId]);
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      stopTimeTracking();
+    };
+  }, []);
 
   const handleSongSelect = (song: SongResult) => {
     setSelectedSong(song);
@@ -51,19 +203,21 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             <div className="sticky top-4">
               <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
                 <div className="aspect-w-16 aspect-h-9">
-                  <div className="w-full h-0 pt-[56.25%] relative bg-black">
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${videoData.videoId}`}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
+                  <div 
+                    className="w-full h-0 pt-[56.25%] relative bg-black"
+                    ref={playerContainerRef}
+                  >
+                    {/* YouTube player will be inserted here */}
                   </div>
                 </div>
                 <div className="p-4">
                   <h2 className="font-medium text-lg mb-1">{videoData.title}</h2>
                   <p className="text-text-muted dark:text-gray-400 text-sm">{videoData.channel}</p>
+                  {currentTime > 0 && (
+                    <div className="mt-2 text-sm text-text-muted dark:text-gray-400">
+                      Current time: {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -106,7 +260,10 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
               </TabsContent>
 
               <TabsContent value="lyrics" className="mt-0">
-                <LyricsView selectedSong={selectedSong} />
+                <LyricsView 
+                  selectedSong={selectedSong} 
+                  currentTime={currentTime}
+                />
               </TabsContent>
             </Tabs>
           </div>

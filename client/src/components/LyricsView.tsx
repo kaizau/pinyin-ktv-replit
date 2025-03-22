@@ -4,20 +4,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SongResult, LyricsResponse } from '@shared/schema';
 import { convertToPinyin } from '@/lib/pinyin';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
 interface LyricsViewProps {
   selectedSong: SongResult | null;
+  currentTime?: number; // Current playback time in seconds
 }
 
-interface LyricLine {
+interface SyncedLyricLine {
   chinese: string;
   pinyin: string;
+  startTime: number; // Start time in seconds
+  endTime: number;   // End time in seconds
 }
 
-export default function LyricsView({ selectedSong }: LyricsViewProps) {
-  const [lyricsWithPinyin, setLyricsWithPinyin] = useState<LyricLine[]>([]);
+export default function LyricsView({ selectedSong, currentTime = 0 }: LyricsViewProps) {
+  const [syncedLyrics, setSyncedLyrics] = useState<SyncedLyricLine[]>([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState<number>(-1);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
   
   const fetchLyrics = async (id: number): Promise<LyricsResponse> => {
     const response = await axios.get(`https://lrclib.net/api/get/${id}`);
@@ -30,32 +35,106 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
     enabled: !!selectedSong,
   });
 
+  // Parse synced lyrics if available, or fall back to plain lyrics
   useEffect(() => {
-    if (data?.plainLyrics) {
-      const processLyrics = async () => {
-        // Split the lyrics into lines
+    if (!data) return;
+    
+    const processLyrics = async () => {
+      let parsedLines: SyncedLyricLine[] = [];
+      
+      if (data.syncedLyrics) {
+        // Parse synced lyrics format: [mm:ss.xx] text
+        const syncedLines = data.syncedLyrics.split('\n').filter(line => line.trim());
+        
+        for (let i = 0; i < syncedLines.length; i++) {
+          const line = syncedLines[i];
+          const timeMatch = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\]/);
+          
+          if (timeMatch) {
+            const minutes = parseInt(timeMatch[1]);
+            const seconds = parseInt(timeMatch[2]);
+            const hundredths = parseInt(timeMatch[3]);
+            const startTime = minutes * 60 + seconds + hundredths / 100;
+            
+            // Get the lyric text by removing the time tag
+            const text = line.replace(/^\[\d{2}:\d{2}\.\d{2}\]/, '').trim();
+            
+            // Determine end time (either from next line or set a default)
+            let endTime = Infinity;
+            if (i < syncedLines.length - 1) {
+              const nextTimeMatch = syncedLines[i + 1].match(/^\[(\d{2}):(\d{2})\.(\d{2})\]/);
+              if (nextTimeMatch) {
+                const nextMinutes = parseInt(nextTimeMatch[1]);
+                const nextSeconds = parseInt(nextTimeMatch[2]);
+                const nextHundredths = parseInt(nextTimeMatch[3]);
+                endTime = nextMinutes * 60 + nextSeconds + nextHundredths / 100;
+              }
+            }
+            
+            // Check if it contains Chinese characters
+            const hasChinese = /[\u4e00-\u9fff]/.test(text);
+            if (hasChinese) {
+              const pinyin = await convertToPinyin(text);
+              parsedLines.push({ chinese: text, pinyin, startTime, endTime });
+            } else {
+              parsedLines.push({ chinese: text, pinyin: '', startTime, endTime });
+            }
+          }
+        }
+      } else if (data.plainLyrics) {
+        // Fall back to plain lyrics if no synced lyrics available
         const lines = data.plainLyrics.split('\n').filter(line => line.trim() !== '');
         
-        // Process each line to generate pinyin
+        // Create approximate timing for plain lyrics (3 seconds per line)
         const processedLines = await Promise.all(
-          lines.map(async (line) => {
-            // Only process lines that contain Chinese characters
+          lines.map(async (line, index) => {
+            const startTime = index * 3; // 3 seconds per line
+            const endTime = (index + 1) * 3;
+            
+            // Check if it contains Chinese characters
             const hasChinese = /[\u4e00-\u9fff]/.test(line);
             if (hasChinese) {
               const pinyin = await convertToPinyin(line);
-              return { chinese: line, pinyin };
+              return { chinese: line, pinyin, startTime, endTime };
             }
-            // For non-Chinese lines (like English parts), leave pinyin empty
-            return { chinese: line, pinyin: '' };
+            return { chinese: line, pinyin: '', startTime, endTime };
           })
         );
         
-        setLyricsWithPinyin(processedLines);
-      };
+        parsedLines = processedLines;
+      }
       
-      processLyrics();
-    }
+      setSyncedLyrics(parsedLines);
+    };
+    
+    processLyrics();
   }, [data]);
+
+  // Update current line index based on playback time
+  useEffect(() => {
+    if (syncedLyrics.length === 0 || currentTime === undefined) return;
+    
+    const newIndex = syncedLyrics.findIndex(
+      (line) => currentTime >= line.startTime && currentTime < line.endTime
+    );
+    
+    if (newIndex !== -1 && newIndex !== currentLineIndex) {
+      setCurrentLineIndex(newIndex);
+      
+      // Scroll to the active line
+      if (lyricsContainerRef.current) {
+        const lineElement = lyricsContainerRef.current.querySelector(`[data-line-index="${newIndex}"]`);
+        if (lineElement) {
+          lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    }
+  }, [currentTime, syncedLyrics, currentLineIndex]);
+
+  // Reset current line when song changes
+  useEffect(() => {
+    setCurrentLineIndex(-1);
+  }, [selectedSong]);
 
   if (!selectedSong) {
     return (
@@ -119,7 +198,7 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
     );
   }
 
-  if (!data || (!data.plainLyrics && !data.instrumental)) {
+  if (!data || (!data.plainLyrics && !data.syncedLyrics && !data.instrumental)) {
     return (
       <Alert>
         <AlertDescription className="flex items-start">
@@ -165,6 +244,8 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
     );
   }
 
+  const hasSyncedLyrics = data.syncedLyrics && data.syncedLyrics.trim() !== '';
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -177,20 +258,50 @@ export default function LyricsView({ selectedSong }: LyricsViewProps) {
           <div>
             <h3 className="font-medium text-lg">{data.trackName}</h3>
             <p className="text-text-muted dark:text-gray-400">{data.artistName}</p>
+            {hasSyncedLyrics && (
+              <span className="inline-flex items-center px-2 py-1 mt-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Synchronized
+              </span>
+            )}
           </div>
         </div>
         
-        <div className="lyrics-container font-chinese mb-6">
-          {lyricsWithPinyin.map((line, index) => (
-            <div key={index} className="mb-4">
+        <div 
+          className="lyrics-container font-chinese mb-6 max-h-[400px] overflow-y-auto pr-2 scroll-smooth" 
+          ref={lyricsContainerRef}
+        >
+          {syncedLyrics.map((line, index) => (
+            <div 
+              key={index} 
+              className={`mb-4 p-2 rounded transition-colors duration-300 ${
+                index === currentLineIndex 
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 pl-3' 
+                  : ''
+              }`}
+              data-line-index={index}
+            >
               {line.pinyin && (
-                <div className="text-[0.85rem] text-[#0070f3] dark:text-[#4da3ff] mb-[-0.25rem]">
+                <div className={`text-[0.85rem] ${
+                  index === currentLineIndex 
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-[#0070f3] dark:text-[#4da3ff]'
+                } mb-[-0.25rem]`}>
                   {line.pinyin}
                 </div>
               )}
-              <div className="text-[1.15rem] leading-[2.5rem]">
+              <div className={`text-[1.15rem] leading-[2.5rem] ${
+                index === currentLineIndex ? 'font-bold' : ''
+              }`}>
                 {line.chinese}
               </div>
+              {hasSyncedLyrics && (
+                <div className="text-xs text-text-muted">
+                  {Math.floor(line.startTime / 60)}:{(line.startTime % 60).toFixed(2).padStart(5, '0')}
+                </div>
+              )}
             </div>
           ))}
         </div>
