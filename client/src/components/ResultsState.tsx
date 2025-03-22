@@ -198,28 +198,14 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Video section - always on top, especially in mobile view */}
-      <div className="w-full flex-shrink-0">
-        <div className="relative bg-black">
+      <div className="w-full flex-shrink-0 max-h-[40vh]">
+        <div className="relative bg-black h-full max-h-[35vh]">
           <div 
-            className="w-full h-0 pt-[56.25%] relative bg-black overflow-hidden"
+            className="w-full h-0 pt-[56.25%] relative bg-black overflow-hidden max-h-full"
             ref={playerContainerRef}
-            style={{ maxHeight: "calc(100vh * 0.4)" }}
+            style={{ maxHeight: "35vh" }}
           >
             {/* YouTube player will be inserted here */}
-            <style dangerouslySetInnerHTML={{
-              __html: `
-                #youtube-player, 
-                #youtube-player iframe {
-                  position: absolute !important;
-                  top: 0 !important;
-                  left: 0 !important;
-                  width: 100% !important;
-                  height: 100% !important;
-                  max-width: 100% !important;
-                  max-height: 100% !important;
-                }
-              `
-            }} />
           </div>
         </div>
         <div className="bg-white dark:bg-gray-900 p-2 flex items-center justify-between">
