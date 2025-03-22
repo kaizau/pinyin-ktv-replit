@@ -75,35 +75,8 @@ export default function SearchResultsView({ searchQuery, onSelectSong }: SearchR
     enabled: !!searchQuery,
   });
 
-  if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center p-4">
-        <div className="space-y-4 w-full">
-          {Array(5).fill(0).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 animate-pulse">
-              <Skeleton className="w-12 h-12 rounded flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <Skeleton className="h-4 w-3/4 rounded mb-2" />
-                <Skeleton className="h-3 w-1/2 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center p-4">
-        <Alert variant="destructive" className="w-full">
-          <AlertDescription>
-            Error loading search results: {(error as Error).message}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  // Removed duplicate loading and error handlers - using the ones below instead
+  // that include the search input for consistent UI positioning
 
   // Render the search input component
   const renderSearchInput = () => {
