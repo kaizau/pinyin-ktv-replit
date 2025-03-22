@@ -17,16 +17,17 @@ interface ResultsStateProps {
 }
 
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
-  const [activeTab, setActiveTab] = useState("search");
+  const [activeTab, setActiveTab] = useState<"video" | "lyrics" | "player">("video");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
 
   // Reference to the seekTo function from the YouTube player
   const seekToRef = useRef<((time: number) => void) | null>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
 
   // State for current search query (modifiable when search fails)
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
-  
+
   // Effect to listen for search-modified events
   useEffect(() => {
     const handleSearchModified = (event: CustomEvent) => {
@@ -34,19 +35,19 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
         setCurrentSearchQuery(event.detail.searchQuery);
       }
     };
-    
+
     const resultsContainer = document.getElementById('results-state-container');
     if (resultsContainer) {
       resultsContainer.addEventListener('search-modified', handleSearchModified as EventListener);
     }
-    
+
     return () => {
       if (resultsContainer) {
         resultsContainer.removeEventListener('search-modified', handleSearchModified as EventListener);
       }
     };
   }, []);
-  
+
   // Set initial search query when videoData changes
   useEffect(() => {
     if (videoData) {
@@ -81,23 +82,31 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
           <a 
             href="#" 
             onClick={onReturn}
-            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "search" ? 'text-blue-500' : 'text-gray-500'}`}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "video" ? 'text-blue-500' : 'text-gray-500'}`}
           >
             Back
           </a>
 
           <a 
             href="#" 
-            onClick={() => setActiveTab("search")}
-            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "search" ? 'text-blue-500' : 'text-gray-500'}`}
+            onClick={() => setActiveTab("video")}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "video" ? 'text-blue-500' : 'text-gray-500'}`}
           >
-            Search
+            Video
           </a>
 
           <a 
             href="#" 
             onClick={() => setActiveTab("lyrics")}
             className={`px-3 py-1 hover:text-blue-500 ${activeTab === "lyrics" ? 'text-blue-500' : 'text-gray-500'}`}
+            style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
+          >
+            Lyrics
+          </a>
+          <a 
+            href="#" 
+            onClick={() => setActiveTab("player")}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "player" ? 'text-blue-500' : 'text-gray-500'}`}
             style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
           >
             Player
@@ -135,7 +144,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
         {/* Main content area */}
         <div className="flex-grow overflow-y-auto">
-          {activeTab === "search" && (
+          {activeTab === "video" && (
             <div className="h-full">
               <SearchResultsView 
                 searchQuery={currentSearchQuery} 
@@ -150,6 +159,16 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
                 selectedSong={selectedSong} 
                 currentTime={currentTime}
                 onSeek={handleSeek}
+              />
+            </div>
+          )}
+
+          {activeTab === "player" && (
+            <div className="h-full p-3 flex justify-center">
+              <YouTubePlayer
+                videoId={selectedSong?.videoId || videoData.videoId}
+                onTimeUpdate={setCurrentTime}
+                ref={playerRef}
               />
             </div>
           )}
