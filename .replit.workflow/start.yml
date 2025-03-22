@@ -1,3 +1,4 @@
-name: Start application
-description: Starts the dev server
+name: start
+description: Start the application
 command: npm run dev
+port: 5000

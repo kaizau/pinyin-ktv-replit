@@ -128,10 +128,15 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
           </div>
         )}
 
+        {/* Theme toggle in top right */}
+        <div className="absolute top-3 right-3">
+          <ThemeToggle />
+        </div>
+
         {/* Main content area */}
         <div className="flex-grow overflow-y-auto">
           {activeTab === "search" && (
-            <div className="h-full p-3">
+            <div className="h-full">
               <SearchResultsView 
                 searchQuery={currentSearchQuery} 
                 onSelectSong={handleSongSelect}

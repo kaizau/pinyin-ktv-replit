@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { extractYoutubeInfo } from '@/lib/youtube';
 import { useToast } from "@/hooks/use-toast";
+import ThemeToggle from './ThemeToggle';
 
 interface InputStateProps {
   onVideoSubmit: (data: {
@@ -100,6 +101,11 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
 
   return (
     <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark overflow-hidden">
+      {/* Theme toggle in top right */}
+      <div className="absolute top-3 right-3">
+        <ThemeToggle />
+      </div>
+      
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center gap-2 mb-6">
