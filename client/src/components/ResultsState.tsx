@@ -17,7 +17,7 @@ interface ResultsStateProps {
 }
 
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
-  const [activeTab, setActiveTab] = useState<"video" | "lyrics">("video");
+  const [activeTab, setActiveTab] = useState<"video" | "lyrics" | "player">("video");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
 
@@ -71,7 +71,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   // Handle song selection
   const handleSongSelect = (song: SongResult) => {
     setSelectedSong(song);
-    // Keep the tab as "lyrics" but now it will show the player + lyrics
+    setActiveTab("lyrics");
   };
 
   return (
@@ -94,8 +94,17 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
             href="#" 
             onClick={() => setActiveTab("lyrics")}
             className={`px-3 py-1 hover:text-blue-500 ${activeTab === "lyrics" ? 'text-blue-500' : 'text-gray-500'}`}
+            style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
           >
             Lyrics
+          </a>
+          <a 
+            href="#" 
+            onClick={() => setActiveTab("player")}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "player" ? 'text-blue-500' : 'text-gray-500'}`}
+            style={{ pointerEvents: !selectedSong ? 'none' : 'auto' }}
+          >
+            Player
           </a>
         </div>
       </div>
@@ -141,48 +150,21 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
           {activeTab === "lyrics" && (
             <div className="h-full p-3">
-              {selectedSong ? (
-                <div className="flex flex-col h-full">
-                  <div className="mb-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleBackToSearch}
-                      className="mb-2"
-                    >
-                      ← Back to search results
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
-                  <div className="flex justify-center">
-                    <YouTubePlayer
-                      videoId={selectedSong.videoId || videoData.videoId}
-                      onTimeUpdate={setCurrentTime}
-                      ref={playerRef}
-                    />
-                  </div>
-                  <div className="overflow-auto">
-                    <LyricsView 
-                      selectedSong={selectedSong} 
-                      currentTime={currentTime}
-                      onSeek={handleSeek}
-                    />
-                  </div>
-                </div>
-                </div>
-              ) : (
-                <SearchResultsView
-                  searchQuery={currentSearchQuery}
-                  videoId={videoData.videoId}
+              <LyricsView 
+                selectedSong={selectedSong} 
+                currentTime={currentTime}
+                onSeek={handleSeek}
+              />
+            </div>
+          )}
 
-  // Function to go back to search results
-  const handleBackToSearch = () => {
-    setSelectedSong(null);
-  };
-
-                  onSongSelect={handleSongSelect}
-                />
-              )}
+          {activeTab === "player" && (
+            <div className="h-full p-3 flex justify-center">
+              <YouTubePlayer
+                videoId={selectedSong?.videoId || videoData.videoId}
+                onTimeUpdate={setCurrentTime}
+                ref={playerRef}
+              />
             </div>
           )}
         </div>
