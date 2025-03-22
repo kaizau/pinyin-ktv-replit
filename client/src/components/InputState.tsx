@@ -111,15 +111,9 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
 
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <svg
-              className="h-8 w-8 text-youtube"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-            </svg>
-            <h1 className="text-2xl font-bold">Pinyin Karaoke</h1>
+          <div className="flex flex-col items-center justify-center gap-2 mb-6">
+            <h1 className="text-3xl font-bold">Pinyin KTV</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Laowai-friendly lyrics for popular Chinese songs</p>
           </div>
 
           <Card>
@@ -270,31 +264,15 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
 
           {/* Recommended Songs */}
           <div className="mt-6">
-            <h3 className="text-sm font-medium mb-2">Suggestions:</h3>
+            <h3 className="text-sm font-medium mb-2">Or dive right in:</h3>
             <div className="flex flex-wrap gap-2">
-              <Badge
-                className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
-                onClick={() =>
-                  useSampleUrl("https://www.youtube.com/watch?v=bu7nU9Mhpyo")
-                }
-              >
-                告白氣球 - 周杰倫
-              </Badge>
               <Badge
                 className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
                 onClick={() =>
                   useSampleUrl("https://www.youtube.com/watch?v=Hlp8XD0R5qo")
                 }
               >
-                孤勇者 - 陳奕迅
-              </Badge>
-              <Badge
-                className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
-                onClick={() =>
-                  useSampleUrl("https://www.youtube.com/watch?v=be2wvNFTLMc")
-                }
-              >
-                隱形的翅膀 - 張韶涵
+                孤勇者 Lonely Warrior - 陳奕迅 Eason Chan
               </Badge>
             </div>
           </div>
