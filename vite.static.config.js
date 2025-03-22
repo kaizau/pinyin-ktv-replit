@@ -24,6 +24,11 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0",
-    port: 5000
+    port: 5000,
+    allowedHosts: [
+      "localhost",
+      "002c1c4f-ebfc-4c8c-a9ce-6e4501be1cca-00-bfgvoli0wtw.janeway.replit.dev",
+      ".replit.dev"
+    ]
   }
 });
