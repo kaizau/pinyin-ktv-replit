@@ -101,10 +101,7 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
 
   return (
     <div className="flex flex-col h-screen bg-background-light dark:bg-background-dark overflow-hidden">
-      {/* Theme toggle in top right */}
-      <div className="absolute top-3 right-3">
-        <ThemeToggle />
-      </div>
+      {/* Theme toggle removed - now using system preference only */}
       
       <div className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-md">

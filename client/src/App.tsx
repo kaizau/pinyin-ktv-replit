@@ -16,17 +16,26 @@ function Router() {
     searchQuery: string;
   } | null>(null);
 
-  // Handle theme based on user preference or system settings
+  // Apply theme based on system preference only
   useEffect(() => {
-    const isDark = 
-      localStorage.theme === 'dark' || 
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    if (isDark) {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Listen for changes in system preference
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   const handleVideoSubmit = (data: {
