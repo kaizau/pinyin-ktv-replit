@@ -125,7 +125,7 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
       playerContainerRef.current.innerHTML = '';
     }
     
-    // Create player div
+    // Create player div with proper styling for containment
     const playerDiv = document.createElement('div');
     playerDiv.id = 'youtube-player';
     playerDiv.style.position = 'absolute';
@@ -138,8 +138,6 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     // Create YouTube player
     playerRef.current = new window.YT.Player('youtube-player', {
       videoId: videoData.videoId,
-      width: '100%',
-      height: '100%',
       playerVars: {
         autoplay: 1,
         modestbranding: 1,
@@ -197,11 +195,12 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Video section - always on top, fixed height to prevent layout issues */}
       <div className="w-full flex-shrink-0">
-        {/* Fixed height container for video */}
+        {/* Fixed height container for video with contained overflow */}
         <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
+          {/* Player container with maintained aspect ratio */}
           <div 
             id="player-container"
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full overflow-hidden"
             ref={playerContainerRef}
           >
             {/* YouTube player will be inserted here */}
