@@ -37,7 +37,7 @@ declare global {
             [key: string]: any;
           };
         }
-      ) => any;
+      ) => YTPlayer;
       PlayerState?: {
         PLAYING: number;
         PAUSED: number;
@@ -49,13 +49,21 @@ declare global {
   }
 }
 
+// Custom type for our player reference (supports both YT.Player and our manual fallback)
+interface YTPlayer {
+  seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
+  getCurrentTime: () => number;
+  destroy: () => void;
+  [key: string]: any;
+}
+
 export default function ResultsState({ videoData, onReturn }: ResultsStateProps) {
   const [activeTab, setActiveTab] = useState("search");
   const [selectedSong, setSelectedSong] = useState<SongResult | null>(null);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [playerReady, setPlayerReady] = useState<boolean>(false);
   
-  const playerRef = useRef<any>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -65,22 +73,39 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
   // Load YouTube API
   useEffect(() => {
-    // Only load the API once
-    if (!document.getElementById('youtube-api')) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-api';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      
-      // Define callback for when API is ready
-      window.onYouTubeIframeAPIReady = () => {
-        setPlayerReady(true);
-      };
-    } else {
-      // If script is already loaded
-      setPlayerReady(true);
-    }
+    const loadYouTubeAPI = () => {
+      // Only load the API once
+      if (!document.getElementById('youtube-api')) {
+        console.log('Loading YouTube API...');
+        // Setup callback before loading script
+        window.onYouTubeIframeAPIReady = () => {
+          console.log('YouTube API is ready');
+          setPlayerReady(true);
+        };
+        
+        // Create and insert script
+        const tag = document.createElement('script');
+        tag.id = 'youtube-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      } else {
+        // If script is already loaded, check if YT object exists
+        if (window.YT && window.YT.Player) {
+          console.log('YouTube API already loaded');
+          setPlayerReady(true);
+        } else {
+          console.log('YouTube API script exists but not ready yet');
+          // Set up callback anyway as a fallback
+          window.onYouTubeIframeAPIReady = () => {
+            console.log('YouTube API is ready (fallback)');
+            setPlayerReady(true);
+          };
+        }
+      }
+    };
+
+    loadYouTubeAPI();
     
     return () => {
       // Clean up the player when component unmounts
@@ -117,26 +142,86 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
   // Initialize YouTube player once the API is ready
   useEffect(() => {
-    if (!playerReady || !videoData?.videoId || !playerContainerRef.current) return;
-    
-    // Clear the container first
-    if (playerContainerRef.current) {
-      playerContainerRef.current.innerHTML = '';
+    if (!playerReady || !videoData?.videoId || !playerContainerRef.current) {
+      console.log('Conditions not met for player creation:', { 
+        playerReady, 
+        hasVideoId: !!videoData?.videoId, 
+        hasContainer: !!playerContainerRef.current 
+      });
+      return;
     }
     
-    // Create player div with proper styling for containment
-    const playerDiv = document.createElement('div');
-    playerDiv.id = 'youtube-player';
-    playerDiv.style.position = 'absolute';
-    playerDiv.style.top = '0';
-    playerDiv.style.left = '0';
-    playerDiv.style.width = '100%';
-    playerDiv.style.height = '100%';
-    playerContainerRef.current.appendChild(playerDiv);
+    console.log('Attempting to create YouTube player for video:', videoData.videoId);
     
-    // Wait a brief moment to ensure DOM is ready
-    setTimeout(() => {
+    // Create an iframe directly instead of using YT.Player
+    const createPlayerManually = () => {
+      if (!playerContainerRef.current) return;
+      
+      // Clear container first
+      playerContainerRef.current.innerHTML = '';
+      
+      // Create iframe element
+      const iframe = document.createElement('iframe');
+      iframe.id = 'youtube-player-iframe';
+      iframe.width = '100%';
+      iframe.height = '100%';
+      iframe.src = `https://www.youtube.com/embed/${videoData.videoId}?enablejsapi=1&origin=${window.location.origin}&modestbranding=1&playsinline=1&rel=0&controls=1`;
+      iframe.allowFullscreen = true;
+      iframe.frameBorder = '0';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      
+      playerContainerRef.current.appendChild(iframe);
+      console.log('Created YouTube iframe manually');
+      
+      // We'll need to implement a simpler seek method
+      // that uses postMessage to control the iframe
+      playerRef.current = {
+        seekTo: (seconds: number) => {
+          const iframe = document.getElementById('youtube-player-iframe') as HTMLIFrameElement;
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'seekTo',
+              args: [seconds, true]
+            }), '*');
+          }
+        },
+        getCurrentTime: () => {
+          // This is a limitation - we can't easily get current time
+          // We could track it ourselves approximately
+          return currentTime;
+        },
+        destroy: () => {
+          if (playerContainerRef.current) {
+            playerContainerRef.current.innerHTML = '';
+          }
+        }
+      };
+    };
+    
+    // Try with YouTube API first
+    const createPlayerWithAPI = () => {
+      if (!playerContainerRef.current || !window.YT || !window.YT.Player) {
+        console.log('YT API not available, falling back to manual iframe');
+        createPlayerManually();
+        return;
+      }
+      
+      // Clear the container first
+      playerContainerRef.current.innerHTML = '';
+      
+      // Create player div
+      const playerDiv = document.createElement('div');
+      playerDiv.id = 'youtube-player';
+      playerDiv.style.position = 'absolute';
+      playerDiv.style.top = '0';
+      playerDiv.style.left = '0';
+      playerDiv.style.width = '100%';
+      playerDiv.style.height = '100%';
+      playerContainerRef.current.appendChild(playerDiv);
+      
       try {
+        console.log('Creating player with YT API...');
         // Create YouTube player
         playerRef.current = new window.YT.Player('youtube-player', {
           videoId: videoData.videoId,
@@ -151,39 +236,44 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
           events: {
             onReady: () => {
               console.log('YouTube player ready');
-              // Start tracking time when player is ready
               startTimeTracking();
             },
             onStateChange: (event: any) => {
-              // State 1 is playing
-              if (event.data === window.YT.PlayerState?.PLAYING) {
+              if (event.data === 1) { // Playing
                 startTimeTracking();
               } else {
-                // Pause, stop, etc.
                 stopTimeTracking();
               }
             },
             onError: (event: any) => {
               console.error('YouTube player error:', event.data);
+              // Fall back to manual iframe on error
+              createPlayerManually();
             }
           }
         });
       } catch (e) {
         console.error("Error creating YouTube player:", e);
+        createPlayerManually();
       }
-    }, 300);
+    };
+    
+    // Try API method first, with a fallback
+    createPlayerWithAPI();
     
     return () => {
       stopTimeTracking();
       if (playerRef.current) {
         try {
-          playerRef.current.destroy();
+          if (typeof playerRef.current.destroy === 'function') {
+            playerRef.current.destroy();
+          }
         } catch (e) {
           console.error("Error destroying YouTube player:", e);
         }
       }
     };
-  }, [playerReady, videoData?.videoId]);
+  }, [playerReady, videoData?.videoId, currentTime]);
   
   // Cleanup interval on unmount
   useEffect(() => {
