@@ -23,27 +23,8 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   // Reference to the seekTo function from the YouTube player
   const seekToRef = useRef<((time: number) => void) | null>(null);
 
-  if (!videoData) {
-    return null;
-  }
-
-  // Function to handle seeking to a specific time in the video
-  const handleSeek = (time: number) => {
-    if (seekToRef.current) {
-      seekToRef.current(time);
-    }
-    // Update our current time state as well
-    setCurrentTime(time);
-  };
-
-  // Handle song selection
-  const handleSongSelect = (song: SongResult) => {
-    setSelectedSong(song);
-    setActiveTab("lyrics");
-  };
-
   // State for current search query (modifiable when search fails)
-  const [currentSearchQuery, setCurrentSearchQuery] = useState(videoData ? videoData.searchQuery : '');
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
   
   // Effect to listen for search-modified events
   useEffect(() => {
@@ -71,6 +52,25 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
       setCurrentSearchQuery(videoData.searchQuery);
     }
   }, [videoData?.searchQuery]);
+
+  if (!videoData) {
+    return null;
+  }
+
+  // Function to handle seeking to a specific time in the video
+  const handleSeek = (time: number) => {
+    if (seekToRef.current) {
+      seekToRef.current(time);
+    }
+    // Update our current time state as well
+    setCurrentTime(time);
+  };
+
+  // Handle song selection
+  const handleSongSelect = (song: SongResult) => {
+    setSelectedSong(song);
+    setActiveTab("lyrics");
+  };
 
   return (
     <div id="results-state-container" className="flex flex-col h-screen overflow-hidden">
