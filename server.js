@@ -10,12 +10,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve static files from the client directory
-app.use(serveStatic(path.join(__dirname, 'client')));
+// Check if dist directory exists (for production) or use client directory (for development)
+const staticDir = path.join(__dirname, 'dist');
+
+// Serve static files from the dist directory
+app.use(serveStatic(staticDir));
 
 // Single page application - serve index.html for all non-static routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/index.html'));
+  res.sendFile(path.join(staticDir, 'index.html'));
 });
 
 // Create HTTP server
