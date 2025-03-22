@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { extractYoutubeInfo } from '@/lib/youtube';
 import { useToast } from "@/hooks/use-toast";
 
@@ -205,6 +206,31 @@ export default function InputState({ onVideoSubmit }: InputStateProps) {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          {/* Recommended Songs */}
+          <div className="mt-6">
+            <h3 className="text-sm font-medium mb-2">Popular Chinese Songs:</h3>
+            <div className="flex flex-wrap gap-2">
+              <Badge 
+                className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                onClick={() => useSampleUrl("https://www.youtube.com/watch?v=bu7nU9Mhpyo")}
+              >
+                告白氣球 - 周杰倫
+              </Badge>
+              <Badge 
+                className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                onClick={() => useSampleUrl("https://www.youtube.com/watch?v=Hlp8XD0R5qo")}
+              >
+                孤勇者 - 陳奕迅
+              </Badge>
+              <Badge 
+                className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                onClick={() => useSampleUrl("https://www.youtube.com/watch?v=be2wvNFTLMc")}
+              >
+                隱形的翅膀 - 張韶涵
+              </Badge>
+            </div>
+          </div>
         </div>
       </div>
     </div>
