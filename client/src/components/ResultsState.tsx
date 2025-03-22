@@ -120,16 +120,26 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
   useEffect(() => {
     if (!playerReady || !videoData?.videoId || !playerContainerRef.current) return;
     
-    // Create player div
-    if (!document.getElementById('youtube-player')) {
-      const playerDiv = document.createElement('div');
-      playerDiv.id = 'youtube-player';
-      playerContainerRef.current.appendChild(playerDiv);
+    // Clear the container first
+    if (playerContainerRef.current) {
+      playerContainerRef.current.innerHTML = '';
     }
+    
+    // Create player div
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'youtube-player';
+    playerDiv.style.position = 'absolute';
+    playerDiv.style.top = '0';
+    playerDiv.style.left = '0';
+    playerDiv.style.width = '100%';
+    playerDiv.style.height = '100%';
+    playerContainerRef.current.appendChild(playerDiv);
     
     // Create YouTube player
     playerRef.current = new window.YT.Player('youtube-player', {
       videoId: videoData.videoId,
+      width: '100%',
+      height: '100%',
       playerVars: {
         autoplay: 1,
         modestbranding: 1,
@@ -143,18 +153,6 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
           console.log('YouTube player ready');
           // Start tracking time when player is ready
           startTimeTracking();
-          
-          // Ensure iframe is properly styled
-          const iframe = document.querySelector('#youtube-player') as HTMLIFrameElement;
-          if (iframe) {
-            iframe.style.position = 'absolute';
-            iframe.style.top = '0';
-            iframe.style.left = '0';
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.maxWidth = '100%';
-            iframe.style.maxHeight = '100%';
-          }
         },
         onStateChange: (event: any) => {
           // State 1 is playing
@@ -197,13 +195,14 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Video section - always on top, especially in mobile view */}
-      <div className="w-full flex-shrink-0 max-h-[40vh]">
-        <div className="relative bg-black h-full max-h-[35vh]">
+      {/* Video section - always on top, fixed height to prevent layout issues */}
+      <div className="w-full flex-shrink-0">
+        {/* Fixed height container for video */}
+        <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] relative overflow-hidden">
           <div 
-            className="w-full h-0 pt-[56.25%] relative bg-black overflow-hidden max-h-full"
+            id="player-container"
+            className="absolute inset-0 w-full h-full"
             ref={playerContainerRef}
-            style={{ maxHeight: "35vh" }}
           >
             {/* YouTube player will be inserted here */}
           </div>
