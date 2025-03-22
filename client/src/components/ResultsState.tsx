@@ -81,6 +81,14 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
         <div className="flex items-center space-x-4 text-sm">
           <a 
             href="#" 
+            onClick={onReturn}
+            className={`px-3 py-1 hover:text-blue-500 ${activeTab === "video" ? 'text-blue-500' : 'text-gray-500'}`}
+          >
+            Back
+          </a>
+
+          <a 
+            href="#" 
             onClick={() => setActiveTab("video")}
             className={`px-3 py-1 hover:text-blue-500 ${activeTab === "video" ? 'text-blue-500' : 'text-gray-500'}`}
           >
