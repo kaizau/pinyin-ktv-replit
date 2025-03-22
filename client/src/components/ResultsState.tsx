@@ -133,8 +133,8 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
 
           {activeTab === "player" && selectedSong && (
             <div className="h-full flex flex-col lg:flex-row">
-              {/* Video section - full width on mobile, left column on desktop */}
-              <div className="w-full lg:w-1/2 flex-shrink-0">
+              {/* Video section - full width on mobile, flexible width on desktop */}
+              <div className="w-full lg:flex-1 flex-shrink-0">
                 <div className="w-full bg-black h-[200px] sm:h-[250px] md:h-[300px] lg:h-full relative overflow-hidden">
                   <div 
                     id="player-container"
@@ -152,8 +152,8 @@ export default function ResultsState({ videoData, onReturn }: ResultsStateProps)
                 </div>
               </div>
               
-              {/* Lyrics section - below on mobile, right column on desktop */}
-              <div className="flex-grow lg:w-1/2 p-3 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800">
+              {/* Lyrics section - below on mobile, right column on desktop with max width */}
+              <div className="w-full max-w-[600px] mx-auto lg:mx-0 p-3 overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800">
                 <LyricsView 
                   selectedSong={selectedSong} 
                   currentTime={currentTime}

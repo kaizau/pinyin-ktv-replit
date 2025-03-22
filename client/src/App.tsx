@@ -56,16 +56,18 @@ function Router() {
     <Switch>
       <Route path="/">
         <div className="min-h-screen flex flex-col font-sans bg-background-light text-text-light transition-colors duration-300 dark:bg-background-dark dark:text-text-dark">
-          {currentState === "input" ? (
-            <InputState onVideoSubmit={handleVideoSubmit} />
-          ) : (
-            <div className="flex flex-col h-screen overflow-hidden">
-              <ResultsState 
-                videoData={videoData}
-                onReturn={returnToInput}
-              />
-            </div>
-          )}
+          <div className="mx-auto w-full max-w-[1600px]">
+            {currentState === "input" ? (
+              <InputState onVideoSubmit={handleVideoSubmit} />
+            ) : (
+              <div className="flex flex-col h-screen overflow-hidden">
+                <ResultsState 
+                  videoData={videoData}
+                  onReturn={returnToInput}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </Route>
       <Route component={NotFound} />
