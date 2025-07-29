@@ -45,7 +45,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "drizzle-kit": "^0.30.5",
+    "drizzle-kit": "^0.31.4",
     "embla-carousel-react": "^8.3.0",
     "express": "^4.21.2",
     "framer-motion": "^11.13.1",
@@ -76,11 +76,11 @@
     "@types/node": "20.16.11",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^7.0.6"
   }
 }
