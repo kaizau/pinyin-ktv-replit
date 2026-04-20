@@ -69,18 +69,18 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@replit/vite-plugin-cartographer": "^0.0.11",
-    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+    "@replit/vite-plugin-cartographer": "^0.5.1",
+    "@replit/vite-plugin-runtime-error-modal": "^0.0.6",
     "@replit/vite-plugin-shadcn-theme-json": "^0.0.4",
-    "@tailwindcss/typography": "^0.5.15",
-    "@types/node": "20.16.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "25.5.2",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.7.0",
-    "autoprefixer": "^10.4.20",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
     "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.14",
-    "typescript": "5.6.3",
+    "tailwindcss": "^4.2.2",
+    "typescript": "6.0.2",
     "vite": "^8.0.8"
   }
 }
